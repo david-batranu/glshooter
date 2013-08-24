@@ -1,179 +1,246 @@
-(function(jQuery){
-  jQuery(document).ready(function(){
-    var Game = {
-      version: '1.0'
-    };
+(function(){
+  var Game = {
+    version: '1.0'
+  };
 
-    Game.Base = {
-      interactive: true,
-      renderer: undefined,
-      stage: undefined,
-      maxFps: 30,
-      fpsLimit: {
-        now: undefined,
-        then: Date.now(),
-        interval: function(){ return 1000/Game.Base.maxFps; },
-        delta: undefined
-      },
-      init: function(bgcolor){
-        var self = Game.Base;
-        self.stage = new PIXI.Stage(0x66FF99, self.interactive);
-        self.renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight);
-        document.body.appendChild(self.renderer.view);
-        Game.Actors.init();
-        Game.events();
-        function animate(){
-          Game.Logic.run();
-          self.renderer.render(self.stage);
-          requestAnimFrame(animate);
+  Game.Base = {
+    interactive: true,
+    stats: new Stats(),
+    renderer: undefined,
+    stage: undefined,
+    loadStats: function(){
+      var self = Game.Base;
+      self.stats.setMode(0);
+      self.stats.domElement.style.position = 'absolute';
+      self.stats.domElement.style.left = '0px';
+      self.stats.domElement.style.top = '0px';
+      document.body.appendChild(self.stats.domElement);
+    },
+    init: function(bgcolor){
+      var self = Game.Base;
+      self.stage = new PIXI.Stage(0x66FF99, self.interactive);
+      self.renderer = PIXI.autoDetectRenderer(1280, 720);
+      document.body.appendChild(self.renderer.view);
+      self.loadStats();
+      Game.Actors.init();
+      Game.events();
+      requestAnimFrame(self.animate);
+    },
+    animate: function(){
+      var self = Game.Base;
+      self.stats.begin();
+
+      Game.Logic.run();
+      self.renderer.render(self.stage);
+      requestAnimFrame(self.animate);
+
+      self.stats.end();
+    }
+  };
+
+  Game.Logic = {
+    firingRate: 2,
+    now: undefined,
+    then: Date.now(),
+    firingInterval: 1000/15,
+    firingDelta: undefined,
+    getRandomInt: function(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    },
+    checkCollision: function(obj1, obj2){
+      var xdist = obj2.position.x - obj1.position.x;
+      if(xdist > -obj2.width && xdist < obj2.width){
+        var ydist = obj2.position.y - obj1.position.y;
+        if(ydist > -obj2.height && ydist < obj2.height){
+          return true;
         }
-        requestAnimFrame(animate);
-      },
-      animate: function(){
-        var self = Game.Base;
-        var fpsLimit = self.fpsLimit;
-        fpsLimit.now = Date.now();
-        fpsLimit.delta = fpsLimit.now - fpsLimit.then;
-        if (fpsLimit.delta > fpsLimit.interval){
-          renderLogic();
-          Game.Base.renderer.render(Game.Base.stage);
-        }
-        requestAnimFrame(Game.base.animate);
       }
-    };
-
-    Game.Logic = {
-      checkCollision: function(obj1, obj2){
-        var xdist = obj2.position.x - obj1.position.x;
-
-        if(xdist > -obj2.width/2 && xdist < obj2.width/2)
-        {
-          var ydist = obj2.position.y - obj1.position.y;
-
-          if(ydist > -obj2.height/2 && ydist < obj2.height/2)
-          {
-            return true;
-          }
-        }
-      },
-      renderBullets: function(){
-        var self = Game.Logic;
-        var bullets = Game.Actors.bullets;
-        var stage = Game.Base.stage;
-        var enemy = Game.Actors.enemy;
-        var renderer = Game.Base.renderer;
-
-        for(var i = 0; i <= bullets.length; i++){
-          var bullet = bullets[i];
-          if(bullet === undefined) break;
-          if(bullet.position.x > renderer.width){
-            stage.removeChild(bullet);
-            bullets.splice(i, 1);
-            i--;
-          }else if(enemy.visible && self.checkCollision(bullet, enemy)){
-            stage.removeChild(enemy);
-            stage.removeChild(bullet);
-            enemy.visible = false;
-            bullets.splice(i, 1);
-            i--;
-          }
-          bullet.position.x += 10;
-        }
-      },
-      run: function(){
-        var self = Game.Logic;
-        self.renderBullets();
-        Game.Actors.enemy.position.x -= 3;
-      }
-    };
-
-
-    Game.Resources = {
-      textures: {
-        bullet: PIXI.Texture.fromImage('img/beam.png'),
-        ship: PIXI.Texture.fromImage('img/ship.png'),
-        enemy: PIXI.Texture.fromImage('img/enemy.png')
-      },
-      sprites: {
-        bullet: function(){
-          var self = Game.Resources;
-          return self.makeSprite(self.textures.bullet);
-        },
-        ship: function(){
-          var self = Game.Resources;
-          return self.makeSprite(self.textures.ship);
-        },
-        enemy: function(){
-          var self = Game.Resources;
-          return self.makeSprite(self.textures.enemy);
-        }
-      },
-      makeSprite: function(textureOrPath){
-        var self = Game.Resources;
-        if(typeof textureOrPath === "string" || textureOrPath instanceof String){
-          return self.makeSpriteFromImage(textureOrPath);
-        }
-        return new PIXI.Sprite(textureOrPath);
-      },
-      makeSpriteFromTexture: function(imagepath){
-        var texture = PIXI.Texture.fromImage(imagepath);
-        return new PIXI.Sprite(texture);
-      },
-      makeSpriteFromImage: function(imagepath){
-        var texture = PIXI.Texture.fromImage(imagepath);
-        return new PIXI.Sprite(texture);
-      }
-    };
-
-    Game.Actors = {
-      bullets: [],
-      enemy: undefined,
-      ship: undefined,
-      init: function(){
-        var self = Game.Actors;
-        self.ship = self.initShip();
-        self.enemy = self.initEnemy();
-        Game.Base.stage.addChild(self.ship);
-        Game.Base.stage.addChild(self.enemy);
-      },
-      initShip: function(){
-        var ship = Game.Resources.sprites.ship();
-        ship.anchor.x = 0.5;
-        ship.anchor.y = 0.5;
-        ship.position.x = Game.Base.renderer.width / 2;
-        ship.position.y = Game.Base.renderer.height /2 ;
-        return ship;
-      },
-      initEnemy: function(){
-        var enemy = Game.Resources.sprites.enemy();
-        enemy.position.x = Game.Base.renderer.width - 300;
-        enemy.position.y = Game.Base.renderer.height / 2;
-        enemy.anchor.x = 0.5;
-        enemy.anchor.y = 0.5;
-        enemy.visible = true;
-        return enemy;
-      }
-    };
-
-
-    Game.events = function(){
-      var renderer = Game.Base.renderer;
+    },
+    shootBullets: function(){
+      var self = Game.Logic;
       var ship = Game.Actors.ship;
-      jQuery(renderer.view).mousemove(function(evt){
-        ship.position.x = evt.clientX;
-        ship.position.y = evt.clientY;
-      });
+      if(ship.shooting){
+        self.now = Date.now();
+        self.firingDelta = self.now - self.then;
+        if(self.firingDelta > self.firingInterval){
+          self.then = self.now;
+          var bullet = Game.Resources.sprites.bullet();
+          bullet.anchor.y = 0.5;
+          bullet.position.x = ship.position.x + ship.width / 2;
+          bullet.position.y = ship.position.y;
+          Game.Actors.bullets.push(bullet);
+          Game.Base.stage.addChild(bullet);
+        }
+      }
+    },
+    renderBullets: function(){
+      var self = Game.Logic;
+      var bullets = Game.Actors.bullets;
+      var stage = Game.Base.stage;
+      var enemies = Game.Actors.enemies;
+      var renderer = Game.Base.renderer;
 
-      jQuery(renderer.view).click(function(evt){
-        var bullet = Game.Resources.sprites.bullet();
-        bullet.anchor.y = 0.5;
-        bullet.position.x = ship.position.x + ship.width;
-        bullet.position.y = ship.position.y;
-        Game.Actors.bullets.push(bullet);
-        Game.Base.stage.addChild(bullet);
-      });
+      for(var i = 0; i <= bullets.length; i++){
+        var bullet = bullets[i];
+        if(bullet === undefined) break;
+        if(bullet.position.x > (renderer.width + bullet.width)){
+          bullets.splice(i, 1);
+          stage.removeChild(bullet);
+          i--;
+        }else {
+          for(var x = 0; x <= enemies.length; x++){
+            var enemy = enemies[x];
+            if(enemy === undefined) break;
+            if(self.checkCollision(bullet, enemy)){
+              enemies.splice(x, 1);
+              bullets.splice(i, 1);
+              stage.removeChild(enemy);
+              stage.removeChild(bullet);
+              x--;
+            }
+          }
+        }
+        bullet.position.x += 10;
+      }
+    },
+    renderEnemies: function(){
+      var self = Game.Logic;
+      var stage = Game.Base.stage;
+      var enemies = Game.Actors.enemies;
+
+      if(enemies.length < 10) {
+        var renderer = Game.Base.renderer;
+        var xPos = self.getRandomInt(renderer.width, renderer.width + 500);
+        var yPos = self.getRandomInt(0, renderer.height);
+        var newEnemy = Game.Actors.initEnemy(xPos, yPos);
+        (function(){
+          var isColliding = false;
+          for(var x = 0; x <= enemies.length; x++){
+            var enemy = enemies[x];
+            if(enemy && self.checkCollision(newEnemy, enemy)){
+              isColliding = true;
+              break;
+            }
+          }
+          console.log(isColliding);
+          if(!isColliding){
+            enemies.push(newEnemy);
+            Game.Base.stage.addChild(newEnemy);
+          }
+        })();
+      }
+
+      for(var x = 0; x <= enemies.length; x++){
+        var enemy = enemies[x];
+        if(enemy === undefined) break;
+        if(enemy.position.x > -enemy.width){
+          enemy.position.x -= 3;
+        }else {
+          enemies.splice(x, 1);
+          stage.removeChild(enemy);
+        }
+      }
+    },
+    run: function(){
+      var self = Game.Logic;
+      self.renderEnemies();
+      self.shootBullets();
+      self.renderBullets();
+    }
+  };
+
+
+  Game.Resources = {
+    textures: {
+      bullet: PIXI.Texture.fromImage('img/beam.png'),
+      ship: PIXI.Texture.fromImage('img/ship.png'),
+      enemy: PIXI.Texture.fromImage('img/enemy.png')
+    },
+    sprites: {
+      bullet: function(){
+        var self = Game.Resources;
+        return self.makeSprite(self.textures.bullet);
+      },
+      ship: function(){
+        var self = Game.Resources;
+        return self.makeSprite(self.textures.ship);
+      },
+      enemy: function(){
+        var self = Game.Resources;
+        return self.makeSprite(self.textures.enemy);
+      }
+    },
+    makeSprite: function(textureOrPath){
+      var self = Game.Resources;
+      if(typeof textureOrPath === "string" || textureOrPath instanceof String){
+        return self.makeSpriteFromImage(textureOrPath);
+      }
+      return new PIXI.Sprite(textureOrPath);
+    },
+    makeSpriteFromTexture: function(imagepath){
+      var texture = PIXI.Texture.fromImage(imagepath);
+      return new PIXI.Sprite(texture);
+    },
+    makeSpriteFromImage: function(imagepath){
+      var texture = PIXI.Texture.fromImage(imagepath);
+      return new PIXI.Sprite(texture);
+    }
+  };
+
+  Game.Actors = {
+    bullets: [],
+    enemies: [],
+    ship: undefined,
+    init: function(){
+      var self = Game.Actors;
+      self.ship = self.initShip();
+      self.enemies.push(self.initEnemy());
+      Game.Base.stage.addChild(self.ship);
+      Game.Base.stage.addChild(self.enemies[0]);
+    },
+    initShip: function(){
+      var ship = Game.Resources.sprites.ship();
+      ship.anchor.x = 0.5;
+      ship.anchor.y = 0.5;
+      ship.position.x = Game.Base.renderer.width / 2;
+      ship.position.y = Game.Base.renderer.height /2 ;
+      ship.shooting = false;
+      ship.lastshot = undefined;
+      return ship;
+    },
+    initEnemy: function(x, y){
+      var enemy = Game.Resources.sprites.enemy();
+      enemy.position.x = x || Game.Base.renderer.width;
+      enemy.position.y = y || Game.Base.renderer.height / 2;
+      enemy.anchor.x = 0.5;
+      enemy.anchor.y = 0.5;
+      return enemy;
+    }
+  };
+
+
+  Game.events = function(){
+    var renderer = Game.Base.renderer;
+    var ship = Game.Actors.ship;
+    renderer.view.onmousemove = function(evt){
+      ship.position.x = evt.clientX;
+      ship.position.y = evt.clientY;
     };
-    if(window.Game === undefined){ window.Game = Game; }
-    Game.Base.init();
-  });
-})(jQuery);
+
+    renderer.view.onmousedown = function(evt){
+      ship.shooting = true;
+    };
+
+    renderer.view.onmouseup = function(evt){
+      ship.shooting = false;
+    };
+  };
+  if(window.Game === undefined){ window.Game = Game; }
+  Game.Base.init();
+
+
+
+
+
+
+})();
