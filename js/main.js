@@ -1,110 +1,179 @@
 (function(jQuery){
   jQuery(document).ready(function(){
-    var interactive = true;
-    var stage = new PIXI.Stage(0x66FF99, interactive);
-    var renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight);
-    jQuery('body').append(renderer.view);
-
-
-    maxFps = 30;
-    var fpsLimit = {
-      fps: maxFps,
-      now: undefined,
-      then: Date.now(),
-      interval: 1000/maxFps,
-      delta: undefined
+    var Game = {
+      version: '1.0'
     };
 
+    Game.Base = {
+      interactive: true,
+      renderer: undefined,
+      stage: undefined,
+      maxFps: 30,
+      fpsLimit: {
+        now: undefined,
+        then: Date.now(),
+        interval: function(){ return 1000/Game.Base.maxFps; },
+        delta: undefined
+      },
+      init: function(bgcolor){
+        var self = Game.Base;
+        self.stage = new PIXI.Stage(0x66FF99, self.interactive);
+        self.renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight);
+        document.body.appendChild(self.renderer.view);
+        Game.Actors.init();
+        Game.events();
+        function animate(){
+          Game.Logic.run();
+          self.renderer.render(self.stage);
+          requestAnimFrame(animate);
+        }
+        requestAnimFrame(animate);
+      },
+      animate: function(){
+        var self = Game.Base;
+        var fpsLimit = self.fpsLimit;
+        fpsLimit.now = Date.now();
+        fpsLimit.delta = fpsLimit.now - fpsLimit.then;
+        if (fpsLimit.delta > fpsLimit.interval){
+          renderLogic();
+          Game.Base.renderer.render(Game.Base.stage);
+        }
+        requestAnimFrame(Game.base.animate);
+      }
+    };
 
-    requestAnimFrame(animate);
+    Game.Logic = {
+      checkCollision: function(obj1, obj2){
+        var xdist = obj2.position.x - obj1.position.x;
 
-    var bullet_texture = PIXI.Texture.fromImage('img/beam.png');
-    var ship_texture = PIXI.Texture.fromImage('img/ship.png');
-    var enemy_texture = PIXI.Texture.fromImage('img/enemy.png');
-
-    var ship = new PIXI.Sprite(ship_texture);
-    var enemy = new PIXI.Sprite(enemy_texture);
-
-    var bullets = [];
-
-    ship.anchor.x = 0.5;
-    ship.anchor.y = 0.5;
-
-    ship.position.x = renderer.width / 2;
-    ship.position.y = renderer.height /2 ;
-
-    jQuery(renderer.view).mousemove(function(evt){
-      ship.position.x = evt.clientX;
-      ship.position.y = evt.clientY;
-    });
-
-    jQuery(renderer.view).click(function(evt){
-      var bullet = new PIXI.Sprite(bullet_texture);
-      bullet.anchor.y = 0.5;
-      bullet.position.x = ship.position.x + ship.width;
-      bullet.position.y = ship.position.y;
-      bullets.push(bullet);
-      stage.addChild(bullet);
-    });
-
-
-    enemy.position.x = renderer.width - 300;
-    enemy.position.y = renderer.height / 2;
-    enemy.anchor.x = 0.5;
-    enemy.anchor.y = 0.5;
-
-
-    stage.addChild(enemy);
-    enemy.visible = true;
-    stage.addChild(ship);
-
-
-    function checkCollision(obj1, obj2){
-      var xdist = obj2.position.x - obj1.position.x;
-
-      if(xdist > -obj2.width/2 && xdist < obj2.width/2)
-      {
-        var ydist = obj2.position.y - obj1.position.y;
-
-        if(ydist > -obj2.height/2 && ydist < obj2.height/2)
+        if(xdist > -obj2.width/2 && xdist < obj2.width/2)
         {
-          return true;
-        }
-      }
-    }
+          var ydist = obj2.position.y - obj1.position.y;
 
-    var renderBullets = function(){
-      for(var i = 0; i <= bullets.length; i++){
-        var bullet = bullets[i];
-        if(bullet === undefined) break;
-        if(bullet.position.x > renderer.width){
-          stage.removeChild(bullet);
-          bullets.splice(i, 1);
-          i--;
-        }else if(enemy.visible && checkCollision(bullet, enemy)){
-          stage.removeChild(enemy);
-          stage.removeChild(bullet);
-          enemy.visible = false;
-          bullets.splice(i, 1);
-          i--;
+          if(ydist > -obj2.height/2 && ydist < obj2.height/2)
+          {
+            return true;
+          }
         }
-        bullet.position.x += 10;
+      },
+      renderBullets: function(){
+        var self = Game.Logic;
+        var bullets = Game.Actors.bullets;
+        var stage = Game.Base.stage;
+        var enemy = Game.Actors.enemy;
+        var renderer = Game.Base.renderer;
+
+        for(var i = 0; i <= bullets.length; i++){
+          var bullet = bullets[i];
+          if(bullet === undefined) break;
+          if(bullet.position.x > renderer.width){
+            stage.removeChild(bullet);
+            bullets.splice(i, 1);
+            i--;
+          }else if(enemy.visible && self.checkCollision(bullet, enemy)){
+            stage.removeChild(enemy);
+            stage.removeChild(bullet);
+            enemy.visible = false;
+            bullets.splice(i, 1);
+            i--;
+          }
+          bullet.position.x += 10;
+        }
+      },
+      run: function(){
+        var self = Game.Logic;
+        self.renderBullets();
+        Game.Actors.enemy.position.x -= 3;
       }
     };
 
-    var renderLogic = function(){
-      renderBullets();
-      enemy.position.x -= 3;
+
+    Game.Resources = {
+      textures: {
+        bullet: PIXI.Texture.fromImage('img/beam.png'),
+        ship: PIXI.Texture.fromImage('img/ship.png'),
+        enemy: PIXI.Texture.fromImage('img/enemy.png')
+      },
+      sprites: {
+        bullet: function(){
+          var self = Game.Resources;
+          return self.makeSprite(self.textures.bullet);
+        },
+        ship: function(){
+          var self = Game.Resources;
+          return self.makeSprite(self.textures.ship);
+        },
+        enemy: function(){
+          var self = Game.Resources;
+          return self.makeSprite(self.textures.enemy);
+        }
+      },
+      makeSprite: function(textureOrPath){
+        var self = Game.Resources;
+        if(typeof textureOrPath === "string" || textureOrPath instanceof String){
+          return self.makeSpriteFromImage(textureOrPath);
+        }
+        return new PIXI.Sprite(textureOrPath);
+      },
+      makeSpriteFromTexture: function(imagepath){
+        var texture = PIXI.Texture.fromImage(imagepath);
+        return new PIXI.Sprite(texture);
+      },
+      makeSpriteFromImage: function(imagepath){
+        var texture = PIXI.Texture.fromImage(imagepath);
+        return new PIXI.Sprite(texture);
+      }
     };
 
-    function animate(){
-      fpsLimit.now = Date.now();
-      fpsLimit.delta = fpsLimit.now - fpsLimit.then;
-      if (fpsLimit.delta > fpsLimit.interval){
-        renderLogic();
-        renderer.render(stage);
+    Game.Actors = {
+      bullets: [],
+      enemy: undefined,
+      ship: undefined,
+      init: function(){
+        var self = Game.Actors;
+        self.ship = self.initShip();
+        self.enemy = self.initEnemy();
+        Game.Base.stage.addChild(self.ship);
+        Game.Base.stage.addChild(self.enemy);
+      },
+      initShip: function(){
+        var ship = Game.Resources.sprites.ship();
+        ship.anchor.x = 0.5;
+        ship.anchor.y = 0.5;
+        ship.position.x = Game.Base.renderer.width / 2;
+        ship.position.y = Game.Base.renderer.height /2 ;
+        return ship;
+      },
+      initEnemy: function(){
+        var enemy = Game.Resources.sprites.enemy();
+        enemy.position.x = Game.Base.renderer.width - 300;
+        enemy.position.y = Game.Base.renderer.height / 2;
+        enemy.anchor.x = 0.5;
+        enemy.anchor.y = 0.5;
+        enemy.visible = true;
+        return enemy;
       }
-      requestAnimFrame(animate);
-    }
+    };
+
+
+    Game.events = function(){
+      var renderer = Game.Base.renderer;
+      var ship = Game.Actors.ship;
+      jQuery(renderer.view).mousemove(function(evt){
+        ship.position.x = evt.clientX;
+        ship.position.y = evt.clientY;
+      });
+
+      jQuery(renderer.view).click(function(evt){
+        var bullet = Game.Resources.sprites.bullet();
+        bullet.anchor.y = 0.5;
+        bullet.position.x = ship.position.x + ship.width;
+        bullet.position.y = ship.position.y;
+        Game.Actors.bullets.push(bullet);
+        Game.Base.stage.addChild(bullet);
+      });
+    };
+    if(window.Game === undefined){ window.Game = Game; }
+    Game.Base.init();
   });
 })(jQuery);
