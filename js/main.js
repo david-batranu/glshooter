@@ -6,6 +6,16 @@
     jQuery('body').append(renderer.view);
 
 
+    maxFps = 30;
+    var fpsLimit = {
+      fps: maxFps,
+      now: undefined,
+      then: Date.now(),
+      interval: 1000/maxFps,
+      delta: undefined
+    };
+
+
     requestAnimFrame(animate);
 
     var bullet_texture = PIXI.Texture.fromImage('img/beam.png');
@@ -63,29 +73,37 @@
       }
     }
 
-    function animate(){
-      var visible_bullets = [];
-
-      jQuery.each(bullets, function(i, bullet){
+    var renderBullets = function(){
+      for(var i = 0; i <= bullets.length; i++){
+        var bullet = bullets[i];
+        if(bullet === undefined) break;
         if(bullet.position.x > renderer.width){
           stage.removeChild(bullet);
+          bullets.splice(i, 1);
+          i--;
         }else if(enemy.visible && checkCollision(bullet, enemy)){
           stage.removeChild(enemy);
           stage.removeChild(bullet);
           enemy.visible = false;
-        }else {
-          visible_bullets.push(bullet);
+          bullets.splice(i, 1);
+          i--;
         }
-      });
-
-      bullets = visible_bullets;
-
-      jQuery.each(bullets, function(i, bullet){
         bullet.position.x += 10;
-      });
-      enemy.position.x -= 3;
+      }
+    };
 
-      renderer.render(stage);
+    var renderLogic = function(){
+      renderBullets();
+      enemy.position.x -= 3;
+    };
+
+    function animate(){
+      fpsLimit.now = Date.now();
+      fpsLimit.delta = fpsLimit.now - fpsLimit.then;
+      if (fpsLimit.delta > fpsLimit.interval){
+        renderLogic();
+        renderer.render(stage);
+      }
       requestAnimFrame(animate);
     }
   });
