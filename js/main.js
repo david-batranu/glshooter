@@ -50,6 +50,7 @@
   };
 
   Game.Logic = {
+    score: 0,
     firingRate: 2,
     now: undefined,
     then: Date.now(),
@@ -107,6 +108,7 @@
               bullet.collided = true;
               var currentScore = parseInt(Game.Base.score.innerHTML, 10);
               currentScore += 10;
+              self.score = currentScore;
               Game.Base.score.innerHTML = currentScore;
             }
           }
@@ -166,7 +168,7 @@
         var enemy = enemies[x];
         if(enemy === undefined) break;
         if(enemy.position.x > -enemy.width){
-          enemy.position.x -= 3;
+          enemy.position.x -= (self.score/500) + 1;
         }else {
           enemies.splice(x, 1);
           stage.removeChild(enemy);
