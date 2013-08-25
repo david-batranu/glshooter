@@ -4,7 +4,7 @@
   };
 
   Game.Base = {
-    interactive: true,
+    interactive: false,
     stats: new Stats(),
     renderer: undefined,
     stage: undefined,
@@ -122,7 +122,6 @@
               break;
             }
           }
-          console.log(isColliding);
           if(!isColliding){
             enemies.push(newEnemy);
             Game.Base.stage.addChild(newEnemy);
@@ -148,7 +147,6 @@
       self.renderBullets();
     }
   };
-
 
   Game.Resources = {
     textures: {
@@ -218,7 +216,6 @@
     }
   };
 
-
   Game.events = function(){
     var renderer = Game.Base.renderer;
     var ship = Game.Actors.ship;
@@ -234,13 +231,13 @@
     renderer.view.onmouseup = function(evt){
       ship.shooting = false;
     };
+
+    // hide text select cursor (beam)
+    renderer.view.onselectstart = function(evt) {
+      return false;
+    };
   };
   if(window.Game === undefined){ window.Game = Game; }
   Game.Base.init();
-
-
-
-
-
 
 })();
