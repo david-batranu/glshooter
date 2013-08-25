@@ -4,6 +4,9 @@
   };
 
   Game.Base = {
+    bgcolor: 0x66FF99,
+    width: 1200,
+    height: 600,
     interactive: false,
     stats: new Stats(),
     renderer: undefined,
@@ -12,16 +15,24 @@
       var self = Game.Base;
       self.stats.setMode(0);
       self.stats.domElement.style.position = 'absolute';
-      self.stats.domElement.style.left = '0px';
-      self.stats.domElement.style.top = '0px';
+      self.stats.domElement.style.left = self.renderer.view.offsetLeft + 'px';
+      self.stats.domElement.style.top = self.renderer.view.offsetTop + 'px';
       document.body.appendChild(self.stats.domElement);
     },
-    init: function(bgcolor){
+    initScore: function(){
       var self = Game.Base;
-      self.stage = new PIXI.Stage(0x66FF99, self.interactive);
-      self.renderer = PIXI.autoDetectRenderer(1280, 720);
+      self.score = document.getElementById('scorevalue');
+      score = document.getElementById('score');
+      score.style.left = self.renderer.view.offsetLeft + 'px';
+      //self.score.html('aa');
+    },
+    init: function(){
+      var self = Game.Base;
+      self.stage = new PIXI.Stage(self.bgcolor, self.interactive);
+      self.renderer = PIXI.autoDetectRenderer(self.width, self.height);
       document.body.appendChild(self.renderer.view);
       self.loadStats();
+      self.initScore();
       Game.Actors.init();
       Game.events();
       requestAnimFrame(self.animate);
@@ -94,6 +105,9 @@
             if(self.checkCollision(bullet, enemy)){
               enemy.collided = true;
               bullet.collided = true;
+              var currentScore = parseInt(Game.Base.score.innerHTML, 10);
+              currentScore += 10;
+              Game.Base.score.innerHTML = currentScore;
             }
           }
         }
@@ -240,8 +254,8 @@
     var renderer = Game.Base.renderer;
     var ship = Game.Actors.ship;
     renderer.view.onmousemove = function(evt){
-      ship.position.x = evt.clientX;
-      ship.position.y = evt.clientY;
+      ship.position.x = evt.clientX - renderer.view.offsetLeft;
+      ship.position.y = evt.clientY - renderer.view.offsetTop;
     };
 
     renderer.view.onmousedown = function(evt){
@@ -258,6 +272,6 @@
     };
   };
   if(window.Game === undefined){ window.Game = Game; }
-  Game.Base.init();
+  Game.Base.init(0x66FF99);
 
 })();
