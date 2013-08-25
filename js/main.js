@@ -105,6 +105,10 @@
         if(!isActive && self.checkCollision(ship, powerup)){
           powerup.props.start = Date.now();
           stage.removeChild(powerup);
+        }else if(powerup.position.y > (renderer.height + powerup.height)){
+          stage.removeChild(powerup);
+          powerups.splice(i, 1);
+          i--;
         }else if(!isActive && !powerup.props.expired){
           powerup.position.y += powerup.props.speed.y;
         }else if(powerup.props.expired){
@@ -330,8 +334,8 @@
           } else if((now - this.start) > this.duration){
             this.expired = true;
           }
-          return false;
         }
+        return false;
       };
       spread.props.render = function(xPos, yPos){
         var topBullet = Game.Actors.initBullet(xPos, yPos, -0.15);
