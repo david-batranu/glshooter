@@ -15,7 +15,7 @@
       var self = Game.Base;
       self.stats.setMode(0);
       self.stats.domElement.style.position = 'absolute';
-      self.stats.domElement.style.left = self.renderer.view.offsetLeft + 'px';
+      self.stats.domElement.style.left = self.renderer.view.offsetLeft - 80 + 'px';
       self.stats.domElement.style.top = self.renderer.view.offsetTop + 'px';
       document.body.appendChild(self.stats.domElement);
     },
@@ -23,8 +23,7 @@
       var self = Game.Base;
       self.score = document.getElementById('scorevalue');
       score = document.getElementById('score');
-      score.style.left = self.renderer.view.offsetLeft + 'px';
-      //self.score.html('aa');
+      score.style.left = self.renderer.view.offsetLeft - 80 + 'px';
     },
     init: function(){
       var self = Game.Base;
@@ -61,13 +60,12 @@
         return Math.floor(Math.random() * (max - min + 1)) + min;
     },
     checkCollision: function(obj1, obj2){
-      var xdist = obj2.position.x - obj1.position.x;
-      if(xdist > -obj2.width && xdist < obj2.width){
-        var ydist = obj2.position.y - obj1.position.y;
-        if(ydist > -obj2.height && ydist < obj2.height){
-          return true;
-        }
-      }
+      var r1 = obj1.props.radius;
+      var r2 = obj2.props.radius;
+      var distX = obj1.position.x - obj2.position.x;
+      var distY = obj1.position.y - obj2.position.y;
+      var sqaredist = (distX * distX) + (distY * distY);
+      return sqaredist <= (r1 + r2) * (r1 + r2);
     },
     shootBullets: function(){
       var self = Game.Logic;
@@ -77,10 +75,9 @@
         self.firingDelta = self.now - self.then;
         if(self.firingDelta > self.firingInterval){
           self.then = self.now;
-          var bullet = Game.Resources.sprites.bullet();
-          bullet.anchor.y = 0.5;
-          bullet.position.x = ship.position.x + ship.width / 2;
-          bullet.position.y = ship.position.y;
+          var xPos = ship.position.x + ship.width / 2;
+          var yPos = ship.position.y;
+          var bullet = Game.Actors.initBullet(xPos, yPos);
           Game.Actors.bullets.push(bullet);
           Game.Base.stage.addChild(bullet);
         }
@@ -128,13 +125,13 @@
           }
         }
 
-        for(var x = 0; i <= enemies.length; x++){
+        for(var x = 0; x <= enemies.length; x++){
           var enemy = enemies[x];
           if(enemy === undefined) break;
           if(enemy.collided){
             enemies.splice(x, 1);
             stage.removeChild(enemy);
-            i--;
+            x--;
           }
         }
       })();
@@ -235,6 +232,13 @@
     bullets: [],
     enemies: [],
     ship: undefined,
+    addProps: function(obj){
+      var props = {
+        radius: (obj.width + obj.height) / 4
+      };
+      obj.props = props;
+      return obj;
+    },
     init: function(){
       var self = Game.Actors;
       self.ship = self.initShip();
@@ -243,6 +247,7 @@
       Game.Base.stage.addChild(self.enemies[0]);
     },
     initShip: function(){
+      var self = Game.Actors;
       var ship = Game.Resources.sprites.ship();
       ship.anchor.x = 0.5;
       ship.anchor.y = 0.5;
@@ -250,15 +255,25 @@
       ship.position.y = Game.Base.renderer.height /2 ;
       ship.shooting = false;
       ship.lastshot = undefined;
-      return ship;
+      return self.addProps(ship);
     },
     initEnemy: function(x, y){
+      var self = Game.Actors;
       var enemy = Game.Resources.sprites.enemy();
       enemy.position.x = x || Game.Base.renderer.width;
       enemy.position.y = y || Game.Base.renderer.height / 2;
       enemy.anchor.x = 0.5;
       enemy.anchor.y = 0.5;
-      return enemy;
+      return self.addProps(enemy);
+    },
+    initBullet: function(x,y){
+      var self = Game.Actors;
+      var bullet = Game.Resources.sprites.bullet();
+      bullet.anchor.x = 0.5;
+      bullet.anchor.y = 0.5;
+      bullet.position.x = x;
+      bullet.position.y = y;
+      return self.addProps(bullet);
     }
   };
 
