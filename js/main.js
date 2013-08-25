@@ -214,7 +214,7 @@
         self.renderPowerups();
       } else {
         alert("GAME OVER! You made it to "+ self.score +" points");
-        location.reload(true);
+        location.reload(false);
       }
     }
   };
