@@ -51,6 +51,7 @@
 
   Game.Logic = {
     score: 0,
+    gameover: false,
     firingRate: 2,
     now: undefined,
     then: Date.now(),
@@ -142,6 +143,7 @@
       var self = Game.Logic;
       var stage = Game.Base.stage;
       var enemies = Game.Actors.enemies;
+      var ship = Game.Actors.ship;
 
       if(enemies.length < 30) {
         var renderer = Game.Base.renderer;
@@ -167,19 +169,27 @@
       for(var x = 0; x <= enemies.length; x++){
         var enemy = enemies[x];
         if(enemy === undefined) break;
-        if(enemy.position.x > -enemy.width){
+        if(ship && self.checkCollision(enemy, ship)){
+          self.gameover = true;
+        } else if(enemy.position.x > -enemy.width){
           enemy.position.x -= (self.score/500) + 1;
         }else {
           enemies.splice(x, 1);
           stage.removeChild(enemy);
+          self.gameover = true;
         }
       }
     },
     run: function(){
       var self = Game.Logic;
-      self.renderEnemies();
-      self.shootBullets();
-      self.renderBullets();
+      if(!self.gameover){
+        self.renderEnemies();
+        self.shootBullets();
+        self.renderBullets();
+      } else {
+        alert("GAME OVER! You made it to "+ self.score +" points");
+        location.reload(true);
+      }
     }
   };
 
