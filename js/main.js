@@ -92,23 +92,42 @@
             var enemy = enemies[x];
             if(enemy === undefined) break;
             if(self.checkCollision(bullet, enemy)){
-              enemies.splice(x, 1);
-              bullets.splice(i, 1);
-              stage.removeChild(enemy);
-              stage.removeChild(bullet);
-              x--;
+              enemy.collided = true;
+              bullet.collided = true;
             }
           }
         }
         bullet.position.x += 10;
       }
+
+      (function(){
+        for(var i = 0; i <= bullets.length; i++){
+          var bullet = bullets[i];
+          if(bullet === undefined) break;
+          if(bullet.collided){
+            bullets.splice(i, 1);
+            stage.removeChild(bullet);
+            i--;
+          }
+        }
+
+        for(var x = 0; i <= enemies.length; x++){
+          var enemy = enemies[x];
+          if(enemy === undefined) break;
+          if(enemy.collided){
+            enemies.splice(x, 1);
+            stage.removeChild(enemy);
+            i--;
+          }
+        }
+      })();
     },
     renderEnemies: function(){
       var self = Game.Logic;
       var stage = Game.Base.stage;
       var enemies = Game.Actors.enemies;
 
-      if(enemies.length < 10) {
+      if(enemies.length < 30) {
         var renderer = Game.Base.renderer;
         var xPos = self.getRandomInt(renderer.width, renderer.width + 500);
         var yPos = self.getRandomInt(0, renderer.height);
@@ -152,7 +171,8 @@
     textures: {
       bullet: PIXI.Texture.fromImage('img/beam.png'),
       ship: PIXI.Texture.fromImage('img/ship.png'),
-      enemy: PIXI.Texture.fromImage('img/enemy.png')
+      enemy: PIXI.Texture.fromImage('img/enemy.png'),
+      square: PIXI.Texture.fromImage('img/square.png')
     },
     sprites: {
       bullet: function(){
