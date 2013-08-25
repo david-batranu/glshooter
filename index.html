@@ -6,15 +6,29 @@
         margin: 0;
         padding: 0;
         background-color: #000000;
+        text-align: center;
       }
       canvas {
         cursor: url('data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=='), auto;
+        margin: 50px auto;
+      }
+      #score {
+        position: absolute;
+        background-color: #000022;
+        color: #00FFFF;
+        font-size: 10px;
+        font-family: Helvetica,Arial,sans-serif;
+        font-weight: bold;
+        line-height: 15px;
+        top: 100px;
+        width: 80px;
       }
     </style>
     <script src="js/pixi.js"></script>
     <script src="js/stats.min.js"></script>
   </head>
   <body>
+    <div id="score"><span id="scorevalue">0</span> POINTS</div>
     <script src="js/main.js"></script>
   </body>
 </html>
