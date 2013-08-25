@@ -125,13 +125,13 @@
           }
         }
 
-        for(var x = 0; i <= enemies.length; x++){
+        for(var x = 0; x <= enemies.length; x++){
           var enemy = enemies[x];
           if(enemy === undefined) break;
           if(enemy.collided){
             enemies.splice(x, 1);
             stage.removeChild(enemy);
-            i--;
+            x--;
           }
         }
       })();
