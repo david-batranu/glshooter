@@ -148,12 +148,17 @@
           for(var x = 0; x < enemies.length; x++){
             var enemy = enemies[x];
             if(self.checkCollision(bullet, enemy)){
-              enemies.splice(x, 1);
               stage.removeChild(enemy);
+              enemies.splice(x, 1);
               x--;
-              bullets.splice(i, 1);
-              stage.removeChild(bullet);
-              i--;
+              try{
+                stage.removeChild(bullet);
+                bullets.splice(i, 1);
+                i++;
+              }
+              catch(err){
+                //nothing
+              }
               var currentScore = parseInt(Game.Base.score.innerHTML, 10);
               currentScore += 10;
               self.score = currentScore;
@@ -171,11 +176,21 @@
       var enemies = Game.Actors.enemies;
       var ship = Game.Actors.ship;
 
+      // DEBUG
+      //if(enemies.length < 10){
+      //  var xPos = 1000;
+      //  var yPos = (34 * enemies.length) - 10 * enemies.length;
+      //  var newEnemy = Game.Actors.initEnemy(xPos, yPos);
+      //  enemies.push(newEnemy);
+      //  Game.Base.stage.addChild(newEnemy);
+      //}
+
       if(enemies.length < 30) {
         var renderer = Game.Base.renderer;
         var xPos = self.getRandomInt(renderer.width, renderer.width + 500);
         var yPos = self.getRandomInt(0, renderer.height);
         var newEnemy = Game.Actors.initEnemy(xPos, yPos);
+        newEnemy.props.speed.x = (self.score/500);
         (function(){
           var isColliding = false;
           for(var x = 0; x < enemies.length; x++){
@@ -197,7 +212,7 @@
         if(ship && self.checkCollision(enemy, ship)){
           self.gameover = true;
         } else if(enemy.position.x > -enemy.width){
-          enemy.position.x -= (self.score/500) + 1;
+          enemy.position.x -= enemy.props.speed.x + 1;
         }else {
           enemies.splice(x, 1);
           stage.removeChild(enemy);
