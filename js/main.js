@@ -53,6 +53,7 @@
       var self = Game.Base;
       var resources = Game.Resources;
       var backgroundTexture = resources.textures.background;
+      // for some reason the image has to be square and 1024x1024 for it to work in FF
       self.background = new PIXI.TilingSprite(backgroundTexture, 1200, 600, true);
       self.stage.addChild(self.background);
     },
@@ -254,12 +255,12 @@
 
   Game.Resources = {
     textures: {
-      bullet: PIXI.Texture.fromImage('img/beam.png'),
-      ship: PIXI.Texture.fromImage('img/ship.png'),
-      enemy: PIXI.Texture.fromImage('img/enemy.png'),
-      square: PIXI.Texture.fromImage('img/square.png'),
-      spread: PIXI.Texture.fromImage('img/spread.png'),
-      background: PIXI.Texture.fromImage('img/background.png')
+      bullet: new PIXI.Texture.fromImage('img/beam.png'),
+      ship: new PIXI.Texture.fromImage('img/ship.png'),
+      enemy: new PIXI.Texture.fromImage('img/enemy.png'),
+      square: new PIXI.Texture.fromImage('img/square.png'),
+      spread: new PIXI.Texture.fromImage('img/spread.png'),
+      background: new PIXI.Texture.fromImage('img/background.png')
     },
     sprites: {
       bullet: function(){
@@ -291,11 +292,11 @@
       return new PIXI.Sprite(textureOrPath);
     },
     makeSpriteFromTexture: function(imagepath){
-      var texture = PIXI.Texture.fromImage(imagepath);
+      var texture = new PIXI.Texture.fromImage(imagepath);
       return new PIXI.Sprite(texture);
     },
     makeSpriteFromImage: function(imagepath){
-      var texture = PIXI.Texture.fromImage(imagepath);
+      var texture = new PIXI.Texture.fromImage(imagepath);
       return new PIXI.Sprite(texture);
     }
   };
