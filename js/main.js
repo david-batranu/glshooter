@@ -11,6 +11,7 @@
     stats: new Stats(),
     renderer: undefined,
     stage: undefined,
+    background: [null, null],
     loadStats: function(){
       var self = Game.Base;
       self.stats.setMode(0);
@@ -30,6 +31,7 @@
       self.stage = new PIXI.Stage(self.bgcolor, self.interactive);
       self.renderer = PIXI.autoDetectRenderer(self.width, self.height);
       document.body.appendChild(self.renderer.view);
+      self.loadBackround();
       self.loadStats();
       self.initScore();
       Game.Actors.init();
@@ -40,11 +42,38 @@
       var self = Game.Base;
       self.stats.begin();
 
+      self.renderBackground();
       Game.Logic.run();
       self.renderer.render(self.stage);
       requestAnimFrame(self.animate);
 
       self.stats.end();
+    },
+    loadBackround: function(){
+      var self = Game.Base;
+      var resources = Game.Resources;
+      var bg1 = resources.sprites.background();
+      var bg2 = resources.sprites.background();
+      bg1.position.x = 0;
+      bg1.position.y = 0;
+      bg2.position.x = bg1.position.x + bg1.width;
+      bg2.position.y = 0;
+      self.stage.addChild(bg1);
+      self.stage.addChild(bg2);
+      self.background[0] = bg1;
+      self.background[1] = bg2;
+    },
+    renderBackground: function(){
+      var self = Game.Base;
+      var speed = 5;
+      var bg1 = self.background[0];
+      var bg2 = self.background[1];
+      if((bg1.position.x + bg1.width) < 0){
+        bg1.position.x = bg2.position.x + bg2.width;
+        self.background = [bg2, bg1];
+      }
+      bg1.position.x -= speed;
+      bg2.position.x -= speed;
     }
   };
 
@@ -141,9 +170,12 @@
         if((bullet.position.x > (renderer.width + bullet.width)) ||
            (bullet.position.y > (renderer.height + bullet.width)) ||
            (bullet.position.y < (-bullet.width))){
-          bullets.splice(i, 1);
-          stage.removeChild(bullet);
-          i--;
+          try{
+            bullets.splice(i, 1);
+            stage.removeChild(bullet);
+            i--;
+          }
+          catch(err){}
         }else {
           for(var x = 0; x < enemies.length; x++){
             var enemy = enemies[x];
@@ -240,7 +272,8 @@
       ship: PIXI.Texture.fromImage('img/ship.png'),
       enemy: PIXI.Texture.fromImage('img/enemy.png'),
       square: PIXI.Texture.fromImage('img/square.png'),
-      spread: PIXI.Texture.fromImage('img/spread.png')
+      spread: PIXI.Texture.fromImage('img/spread.png'),
+      background: PIXI.Texture.fromImage('img/background.png')
     },
     sprites: {
       bullet: function(){
@@ -258,6 +291,10 @@
       spread: function(){
         var self = Game.Resources;
         return self.makeSprite(self.textures.spread);
+      },
+      background: function(){
+        var self = Game.Resources;
+        return self.makeSprite(self.textures.background);
       }
     },
     makeSprite: function(textureOrPath){
