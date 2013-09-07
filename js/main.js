@@ -11,7 +11,7 @@
     stats: new Stats(),
     renderer: undefined,
     stage: undefined,
-    background: [null, null],
+    background: null,
     loadStats: function(){
       var self = Game.Base;
       self.stats.setMode(0);
@@ -52,28 +52,14 @@
     loadBackround: function(){
       var self = Game.Base;
       var resources = Game.Resources;
-      var bg1 = resources.sprites.background();
-      var bg2 = resources.sprites.background();
-      bg1.position.x = 0;
-      bg1.position.y = 0;
-      bg2.position.x = bg1.position.x + bg1.width;
-      bg2.position.y = 0;
-      self.stage.addChild(bg1);
-      self.stage.addChild(bg2);
-      self.background[0] = bg1;
-      self.background[1] = bg2;
+      var backgroundTexture = resources.textures.background;
+      self.background = new PIXI.TilingSprite(backgroundTexture, 1200, 600, true);
+      self.stage.addChild(self.background);
     },
     renderBackground: function(){
       var self = Game.Base;
       var speed = 5;
-      var bg1 = self.background[0];
-      var bg2 = self.background[1];
-      if((bg1.position.x + bg1.width) < 0){
-        bg1.position.x = bg2.position.x + bg2.width;
-        self.background = [bg2, bg1];
-      }
-      bg1.position.x -= speed;
-      bg2.position.x -= speed;
+      self.background.tilePosition.x -= speed;
     }
   };
 
@@ -413,12 +399,22 @@
       ship.position.x = evt.clientX - renderer.view.offsetLeft;
       ship.position.y = evt.clientY - renderer.view.offsetTop;
     };
+    renderer.view.ontouchmove = function(evt){
+      ship.position.x = evt.clientX - renderer.view.offsetLeft;
+      ship.position.y = evt.clientY - renderer.view.offsetTop;
+    };
 
     renderer.view.onmousedown = function(evt){
       ship.shooting = true;
     };
+    renderer.view.ontouchstart = function(evt){
+      ship.shooting = true;
+    };
 
     renderer.view.onmouseup = function(evt){
+      ship.shooting = false;
+    };
+    renderer.view.ontouchend = function(evt){
       ship.shooting = false;
     };
 
