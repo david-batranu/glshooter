@@ -59,13 +59,13 @@
     getRandomInt: function(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     },
-    checkCollision: function(obj1, obj2){
-      var r1 = obj1.props.radius || (obj1.width + obj1.height) / 4;
-      var r2 = obj2.props.radius || (obj2.width + obj2.height) / 4;
-      var distX = obj1.position.x - obj2.position.x;
-      var distY = obj1.position.y - obj2.position.y;
-      var sqaredist = (distX * distX) + (distY * distY);
-      return sqaredist <= (r1 + r2) * (r1 + r2);
+    checkCollision:function(obj1, obj2){
+      var o1x = obj1.position.x - (obj1.width / 2);
+      var o1y = obj1.position.y - (obj1.height / 2);
+      var o2x = obj2.position.x - (obj2.width / 2);
+      var o2y = obj2.position.y - (obj2.height / 2);
+      return (o1x + obj1.width) >= o2x && o1x <= (o2x + obj2.width) &&
+        (o1y + obj1.height) >= o2y && o1y <= (o2y + obj2.height);
     },
     shootBullets: function(){
       var self = Game.Logic;
