@@ -280,8 +280,8 @@
     PIXI.Sprite.call(this, Game.Resources.textures.bullet);
     this.anchor.x = 0.5;
     this.anchor.y = 0.5;
-    this.position.x = posX || Game.Base.renderer.width;
-    this.position.y = posY || Game.Base.renderer.height / 2;
+    this.position.x = posX;
+    this.position.y = posY;
     this.rotation = rotation || 0;
     this.speed = {
       x: 0,
