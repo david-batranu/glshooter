@@ -31,11 +31,13 @@
       self.stage = new PIXI.Stage(self.bgcolor, self.interactive);
       self.renderer = PIXI.autoDetectRenderer(self.width, self.height);
       document.body.appendChild(self.renderer.view);
+
       self.loadBackround();
       self.loadStats();
       self.initScore();
       Game.Actors.init();
       Game.events();
+
       requestAnimFrame(self.animate);
     },
     animate: function(){
@@ -59,7 +61,7 @@
     },
     renderBackground: function(){
       var self = Game.Base;
-      var speed = 5;
+      var speed = 0.5;
       self.background.tilePosition.x -= speed;
     }
   };
@@ -93,8 +95,8 @@
           self.then = self.now;
           var xPos = ship.position.x + ship.width / 2;
           var yPos = ship.position.y;
-          var bullet = Game.Actors.initBullet(xPos, yPos);
-          bullet.props.speed.x = 6;
+          var bullet = new Game.Bullet(xPos, yPos);
+          bullet.speed.x = 6;
           Game.Actors.bullets.push(bullet);
           Game.Base.stage.addChild(bullet);
           self.firePowerups();
@@ -109,25 +111,25 @@
       var stage = Game.Base.stage;
 
       if((powerups.length < 1) && (self.score % 500) === 0){
-        var newPowerup = Game.Actors.initSpreadPowerup(renderer.width/2, 0);
-        newPowerup.props.speed.y = 1;
+        var newPowerup = new Game.SpreadPowerUp(renderer.width/2, 0);
+        newPowerup.speed.y = 1;
         stage.addChild(newPowerup);
         powerups.push(newPowerup);
       }
 
       for(var i=0; i<powerups.length;i++){
         var powerup = powerups[i];
-        var isActive = powerup.props.active();
+        var isActive = powerup.active();
         if(!isActive && self.checkCollision(ship, powerup)){
-          powerup.props.start = Date.now();
+          powerup.start = Date.now();
           stage.removeChild(powerup);
         }else if(powerup.position.y > (renderer.height + powerup.height)){
           stage.removeChild(powerup);
           powerups.splice(i, 1);
           i--;
-        }else if(!isActive && !powerup.props.expired){
-          powerup.position.y += powerup.props.speed.y;
-        }else if(powerup.props.expired){
+        }else if(!isActive && !powerup.expired){
+          powerup.position.y += powerup.speed.y;
+        }else if(powerup.expired){
           powerups.splice(i, 1);
           i--;
         }
@@ -138,10 +140,10 @@
       var powerups = Game.Actors.powerups;
       for(var i=0; i<powerups.length;i++){
         var powerup = powerups[i];
-        if(powerup.props.active()){
+        if(powerup.active()){
           var xPos = ship.position.x + ship.width / 2;
           var yPos = ship.position.y;
-          powerup.props.render(xPos, yPos);
+          powerup.render(xPos, yPos);
         }
       }
     },
@@ -185,8 +187,8 @@
             }
           }
         }
-        bullet.position.x += bullet.props.speed.x;
-        bullet.position.y += bullet.props.speed.y;
+        bullet.position.x += bullet.speed.x;
+        bullet.position.y += bullet.speed.y;
       }
     },
     renderEnemies: function(){
@@ -195,21 +197,12 @@
       var enemies = Game.Actors.enemies;
       var ship = Game.Actors.ship;
 
-      // DEBUG
-      //if(enemies.length < 10){
-      //  var xPos = 1000;
-      //  var yPos = (34 * enemies.length) - 10 * enemies.length;
-      //  var newEnemy = Game.Actors.initEnemy(xPos, yPos);
-      //  enemies.push(newEnemy);
-      //  Game.Base.stage.addChild(newEnemy);
-      //}
-
       if(enemies.length < 30) {
         var renderer = Game.Base.renderer;
         var xPos = self.getRandomInt(renderer.width, renderer.width + 500);
         var yPos = self.getRandomInt(0, renderer.height);
-        var newEnemy = Game.Actors.initEnemy(xPos, yPos);
-        newEnemy.props.speed.x = (self.score/500);
+        var newEnemy = new Game.Enemy(xPos, yPos);
+        newEnemy.speed.x = (self.score/500);
         (function(){
           var isColliding = false;
           for(var x = 0; x < enemies.length; x++){
@@ -231,7 +224,7 @@
         if(ship && self.checkCollision(enemy, ship)){
           self.gameover = true;
         } else if(enemy.position.x > -enemy.width){
-          enemy.position.x -= enemy.props.speed.x + 1;
+          enemy.position.x -= enemy.speed.x + 1;
         }else {
           enemies.splice(x, 1);
           stage.removeChild(enemy);
@@ -301,95 +294,112 @@
     }
   };
 
+
+  Game.Ship = function(){
+    PIXI.Sprite.call(this, Game.Resources.textures.ship);
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+    this.shooting = false;
+    this.lastshot = undefined;
+    this.speed = {
+      x: 0,
+      y: 0
+    }
+  };
+  Game.Ship.prototype = Object.create(PIXI.Sprite.prototype);
+  Game.Ship.prototype.constructor = Game.Ship;
+
+
+  Game.Enemy = function(posX, posY){
+    PIXI.Sprite.call(this, Game.Resources.textures.enemy);
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+    this.position.x = posX || Game.Base.renderer.width;
+    this.position.y = posY || Game.Base.renderer.height / 2;
+    this.speed = {
+      x: 0,
+      y: 0
+    }
+  };
+  Game.Enemy.prototype = Object.create(PIXI.Sprite.prototype);
+  Game.Enemy.prototype.constructor = Game.Enemy;
+
+
+  Game.Bullet = function(posX, posY, rotation){
+    PIXI.Sprite.call(this, Game.Resources.textures.bullet);
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+    this.position.x = posX || Game.Base.renderer.width;
+    this.position.y = posY || Game.Base.renderer.height / 2;
+    this.rotation = rotation || 0;
+    this.speed = {
+      x: 0,
+      y: 0
+    }
+  };
+  Game.Bullet.prototype = Object.create(PIXI.Sprite.prototype);
+  Game.Bullet.prototype.constructor = Game.Bullet;
+
+
+  Game.PowerUp = function(posX, posY, texture){
+    PIXI.Sprite.call(this, texture);
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+    this.position.x = posX;
+    this.position.y = posY;
+    this.start = undefined;
+    this.expired = false;
+    this.duration = 5000;
+    this.speed = {
+      x: 0,
+      y: 0
+    };
+    this.active = function(){
+      if(this.start !== undefined){
+        var now = Date.now();
+        if((now - this.start) < this.duration){
+          return true;
+        } else if((now - this.start) > this.duration){
+          this.expired = true;
+        }
+      }
+      return false;
+    };
+    this.render = function(xPos, yPos){};
+  };
+  Game.PowerUp.prototype = Object.create(PIXI.Sprite.prototype);
+  Game.PowerUp.prototype.constructor = Game.PowerUp;
+
+
+  Game.SpreadPowerUp = function(posX, posY){
+    Game.PowerUp.call(this, posX, posY, Game.Resources.textures.spread);
+    this.render = function(xPos, yPos){
+      var topBullet = new Game.Bullet(xPos, yPos, -0.15);
+      topBullet.speed.x = 6;
+      topBullet.speed.y = -3;
+      Game.Actors.bullets.push(topBullet);
+      Game.Base.stage.addChild(topBullet);
+
+      var botBullet = new Game.Bullet(xPos, yPos, 0.15);
+      botBullet.speed.x = 6;
+      botBullet.speed.y = 3;
+      Game.Actors.bullets.push(botBullet);
+      Game.Base.stage.addChild(botBullet);
+    };
+  };
+  Game.SpreadPowerUp.prototype = Object.create(PIXI.Sprite.prototype);
+  Game.SpreadPowerUp.prototype.constructor = Game.SpreadPowerUp;
+
+
   Game.Actors = {
     bullets: [],
     enemies: [],
     powerups: [],
     ship: undefined,
-    addProps: function(obj){
-      var props = {
-        radius: (obj.width + obj.height) / 4,
-        speed: {
-          x: 0,
-          y: 0
-        }
-      };
-      obj.props = props;
-      return obj;
-    },
     init: function(){
       var self = Game.Actors;
-      self.ship = self.initShip();
-      self.enemies.push(self.initEnemy());
+      self.ship = new Game.Ship();
       Game.Base.stage.addChild(self.ship);
-      Game.Base.stage.addChild(self.enemies[0]);
-    },
-    initShip: function(){
-      var self = Game.Actors;
-      var ship = Game.Resources.sprites.ship();
-      ship.anchor.x = 0.5;
-      ship.anchor.y = 0.5;
-      ship.position.x = Game.Base.renderer.width / 2;
-      ship.position.y = Game.Base.renderer.height /2 ;
-      ship.shooting = false;
-      ship.lastshot = undefined;
-      return self.addProps(ship);
-    },
-    initEnemy: function(x, y){
-      var self = Game.Actors;
-      var enemy = Game.Resources.sprites.enemy();
-      enemy.position.x = x || Game.Base.renderer.width;
-      enemy.position.y = y || Game.Base.renderer.height / 2;
-      enemy.anchor.x = 0.5;
-      enemy.anchor.y = 0.5;
-      return self.addProps(enemy);
-    },
-    initBullet: function(x,y, rotation){
-      var self = Game.Actors;
-      var bullet = Game.Resources.sprites.bullet();
-      bullet.anchor.x = 0.5;
-      bullet.anchor.y = 0.5;
-      bullet.position.x = x;
-      bullet.position.y = y;
-      bullet.rotation = rotation || 0;
-      return self.addProps(bullet);
-    },
-    initSpreadPowerup: function(x, y){
-      var self = Game.Actors;
-      var spread = Game.Resources.sprites.spread();
-      spread.position.x = x;
-      spread.position.y = y;
-      spread.anchor.x = 0.5;
-      spread.anchor.y = 0.5;
-      spread = self.addProps(spread);
-      spread.props.start = undefined;
-      spread.props.expired = false;
-      spread.props.duration = 5000;
-      spread.props.active = function(){
-        if(this.start !== undefined){
-          var now = Date.now();
-          if((now - this.start) < this.duration){
-            return true;
-          } else if((now - this.start) > this.duration){
-            this.expired = true;
-          }
-        }
-        return false;
-      };
-      spread.props.render = function(xPos, yPos){
-        var topBullet = Game.Actors.initBullet(xPos, yPos, -0.15);
-        topBullet.props.speed.x = 6;
-        topBullet.props.speed.y = -3;
-        Game.Actors.bullets.push(topBullet);
-        Game.Base.stage.addChild(topBullet);
-
-        var botBullet = Game.Actors.initBullet(xPos, yPos, 0.15);
-        botBullet.props.speed.x = 6;
-        botBullet.props.speed.y = 3;
-        Game.Actors.bullets.push(botBullet);
-        Game.Base.stage.addChild(botBullet);
-      };
-      return spread;
     }
   };
 
