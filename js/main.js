@@ -289,7 +289,7 @@
         this.position.x -= this.speed.x + 1;
       }else{
         this.visible = false;
-        self.gameover = true;
+        Game.Logic.gameover = true;
       };
     };
   };
