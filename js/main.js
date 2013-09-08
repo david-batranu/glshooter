@@ -69,11 +69,6 @@
   Game.Logic = {
     score: 0,
     gameover: false,
-    firingRate: 2,
-    now: undefined,
-    then: Date.now(),
-    firingInterval: 1000/15,
-    firingDelta: undefined,
     getRandomInt: function(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     },
@@ -84,24 +79,6 @@
       var o2y = obj2.position.y - (obj2.height / 2);
       return (o1x + obj1.width) >= o2x && o1x <= (o2x + obj2.width) &&
         (o1y + obj1.height) >= o2y && o1y <= (o2y + obj2.height);
-    },
-    shootBullets: function(){
-      var self = Game.Logic;
-      var ship = Game.Actors.ship;
-      if(ship.shooting){
-        self.now = Date.now();
-        self.firingDelta = self.now - self.then;
-        if(self.firingDelta > self.firingInterval){
-          self.then = self.now;
-          var xPos = ship.position.x + ship.width / 2;
-          var yPos = ship.position.y;
-          var bullet = new Game.Bullet(xPos, yPos);
-          bullet.speed.x = 6;
-          Game.Actors.bullets.push(bullet);
-          Game.Base.stage.addChild(bullet);
-          self.firePowerups();
-        }
-      }
     },
     renderPowerups: function(){
       var self = Game.Logic;
@@ -221,22 +198,14 @@
 
       for(var x = 0; x < enemies.length; x++){
         var enemy = enemies[x];
-        if(ship && self.checkCollision(enemy, ship)){
-          self.gameover = true;
-        } else if(enemy.position.x > -enemy.width){
-          enemy.position.x -= enemy.speed.x + 1;
-        }else {
-          enemies.splice(x, 1);
-          stage.removeChild(enemy);
-          self.gameover = true;
-        }
+        enemy.render();
       }
     },
     run: function(){
       var self = Game.Logic;
       if(!self.gameover){
         self.renderEnemies();
-        self.shootBullets();
+        Game.Actors.ship.render();
         self.renderBullets();
         self.renderPowerups();
       } else {
@@ -254,43 +223,6 @@
       square: new PIXI.Texture.fromImage('img/square.png'),
       spread: new PIXI.Texture.fromImage('img/spread.png'),
       background: new PIXI.Texture.fromImage('img/background.png')
-    },
-    sprites: {
-      bullet: function(){
-        var self = Game.Resources;
-        return self.makeSprite(self.textures.bullet);
-      },
-      ship: function(){
-        var self = Game.Resources;
-        return self.makeSprite(self.textures.ship);
-      },
-      enemy: function(){
-        var self = Game.Resources;
-        return self.makeSprite(self.textures.enemy);
-      },
-      spread: function(){
-        var self = Game.Resources;
-        return self.makeSprite(self.textures.spread);
-      },
-      background: function(){
-        var self = Game.Resources;
-        return self.makeSprite(self.textures.background);
-      }
-    },
-    makeSprite: function(textureOrPath){
-      var self = Game.Resources;
-      if(typeof textureOrPath === "string" || textureOrPath instanceof String){
-        return self.makeSpriteFromImage(textureOrPath);
-      }
-      return new PIXI.Sprite(textureOrPath);
-    },
-    makeSpriteFromTexture: function(imagepath){
-      var texture = new PIXI.Texture.fromImage(imagepath);
-      return new PIXI.Sprite(texture);
-    },
-    makeSpriteFromImage: function(imagepath){
-      var texture = new PIXI.Texture.fromImage(imagepath);
-      return new PIXI.Sprite(texture);
     }
   };
 
@@ -299,6 +231,8 @@
     PIXI.Sprite.call(this, Game.Resources.textures.ship);
     this.anchor.x = 0.5;
     this.anchor.y = 0.5;
+    this.position.x = Game.Base.renderer.width / 2;
+    this.position.y = Game.Base.renderer.height / 2;
     this.shooting = false;
     this.lastshot = undefined;
     this.speed = {
@@ -310,6 +244,33 @@
   Game.Ship.prototype.constructor = Game.Ship;
 
 
+  Game.Player = function(){
+    Game.Ship.call(this);
+    this.now = undefined;
+    this.then = Date.now();
+    this.firingInterval = 1000/15;
+    this.firingDelta = undefined;
+    this.render = function(){
+      if(this.shooting){
+        this.now = Date.now();
+        this.firingDelta = this.now - this.then;
+        if(this.firingDelta > this.firingInterval){
+          this.then = this.now;
+          var xPos = this.position.x + this.width / 2;
+          var yPos = this.position.y;
+          var bullet = new Game.Bullet(xPos, yPos);
+          bullet.speed.x = 6;
+          Game.Actors.bullets.push(bullet);
+          Game.Base.stage.addChild(bullet);
+          Game.Logic.firePowerups();
+        }
+      }
+    };
+  }
+  Game.Player.prototype = Object.create(Game.Ship.prototype);
+  Game.Player.prototype.constructor = Game.Player;
+
+
   Game.Enemy = function(posX, posY){
     PIXI.Sprite.call(this, Game.Resources.textures.enemy);
     this.anchor.x = 0.5;
@@ -319,7 +280,18 @@
     this.speed = {
       x: 0,
       y: 0
-    }
+    },
+    this.render = function(){
+      var ship = Game.Actors.ship;
+      if(Game.Logic.checkCollision(this, ship)){
+        Game.Logic.gameover = true;
+      }else if(this.position.x > -this.width){ // outside left screen edge when true
+        this.position.x -= this.speed.x + 1;
+      }else{
+        this.visible = false;
+        self.gameover = true;
+      };
+    };
   };
   Game.Enemy.prototype = Object.create(PIXI.Sprite.prototype);
   Game.Enemy.prototype.constructor = Game.Enemy;
@@ -398,7 +370,7 @@
     ship: undefined,
     init: function(){
       var self = Game.Actors;
-      self.ship = new Game.Ship();
+      self.ship = new Game.Player();
       Game.Base.stage.addChild(self.ship);
     }
   };
