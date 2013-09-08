@@ -125,57 +125,25 @@
       }
     },
     renderBullets: function(){
-      var self = Game.Logic;
       var bullets = Game.Actors.bullets;
       var stage = Game.Base.stage;
+      for(var i = 0; i < bullets.length; i++){
+        var bullet = bullets[i];
+        if(bullet.visible){
+          bullet.render()
+        }else{
+          bullets.splice(i, 1);
+          stage.removeChild(bullet);
+          i--;
+        }
+      }
+    },
+    spawnEnemies: function(){
+      var self = Game.Logic;
       var enemies = Game.Actors.enemies;
       var renderer = Game.Base.renderer;
 
-      for(var i = 0; i < bullets.length; i++){
-        var bullet = bullets[i];
-        if((bullet.position.x > (renderer.width + bullet.width)) ||
-           (bullet.position.y > (renderer.height + bullet.width)) ||
-           (bullet.position.y < (-bullet.width))){
-          try{
-            bullets.splice(i, 1);
-            stage.removeChild(bullet);
-            i--;
-          }
-          catch(err){}
-        }else {
-          for(var x = 0; x < enemies.length; x++){
-            var enemy = enemies[x];
-            if(self.checkCollision(bullet, enemy)){
-              stage.removeChild(enemy);
-              enemies.splice(x, 1);
-              x--;
-              try{
-                stage.removeChild(bullet);
-                bullets.splice(i, 1);
-                i++;
-              }
-              catch(err){
-                //nothing
-              }
-              var currentScore = parseInt(Game.Base.score.innerHTML, 10);
-              currentScore += 10;
-              self.score = currentScore;
-              Game.Base.score.innerHTML = currentScore;
-            }
-          }
-        }
-        bullet.position.x += bullet.speed.x;
-        bullet.position.y += bullet.speed.y;
-      }
-    },
-    renderEnemies: function(){
-      var self = Game.Logic;
-      var stage = Game.Base.stage;
-      var enemies = Game.Actors.enemies;
-      var ship = Game.Actors.ship;
-
       if(enemies.length < 30) {
-        var renderer = Game.Base.renderer;
         var xPos = self.getRandomInt(renderer.width, renderer.width + 500);
         var yPos = self.getRandomInt(0, renderer.height);
         var newEnemy = new Game.Enemy(xPos, yPos);
@@ -195,15 +163,26 @@
           }
         })();
       }
+    },
+    renderEnemies: function(){
+      var stage = Game.Base.stage;
+      var enemies = Game.Actors.enemies;
 
       for(var x = 0; x < enemies.length; x++){
         var enemy = enemies[x];
-        enemy.render();
+        if(enemy.visible) {
+          enemy.render();
+        }else{
+          enemies.splice(x, 1);
+          stage.removeChild(enemy);
+          x--;
+        }
       }
     },
     run: function(){
       var self = Game.Logic;
       if(!self.gameover){
+        self.spawnEnemies();
         self.renderEnemies();
         Game.Actors.ship.render();
         self.renderBullets();
@@ -307,7 +286,33 @@
     this.speed = {
       x: 0,
       y: 0
-    }
+    };
+    this.inViewport = function(){
+      var renderer = Game.Base.renderer;
+      return !((this.position.x > (renderer.width + this.width)) ||
+              (this.position.y > (renderer.height + this.width)) ||
+              (this.position.y < (-this.width)))
+    };
+    this.render = function(){
+      var enemies = Game.Actors.enemies;
+      if(!this.inViewport()){
+        this.visble = false;
+      }else {
+        for(var x = 0; x < enemies.length; x++){
+          var enemy = enemies[x];
+          if(Game.Logic.checkCollision(this, enemy)){
+            enemy.visible = false;
+            this.visible = false;
+            var currentScore = parseInt(Game.Base.score.innerHTML, 10);
+            currentScore += 10;
+            Game.Logic.score = currentScore;
+            Game.Base.score.innerHTML = currentScore;
+          }
+        }
+      }
+      this.position.x += this.speed.x;
+      this.position.y += this.speed.y;
+    };
   };
   Game.Bullet.prototype = Object.create(PIXI.Sprite.prototype);
   Game.Bullet.prototype.constructor = Game.Bullet;
