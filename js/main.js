@@ -87,7 +87,7 @@
       var renderer = Game.Base.renderer;
       var stage = Game.Base.stage;
 
-      if((powerups.length < 1) && (self.score % 500) === 0){
+      if((ship.powerups.length < 1 && powerups.length < 1) && (self.score % 500) === 0){
         var newPowerup = new Game.SpreadPowerUp(renderer.width/2, 0);
         newPowerup.speed.y = 1;
         stage.addChild(newPowerup);
@@ -96,20 +96,18 @@
 
       for(var i=0; i<powerups.length;i++){
         var powerup = powerups[i];
-        var isActive = powerup.active();
-        if(!isActive && self.checkCollision(ship, powerup)){
+        if(self.checkCollision(ship, powerup)){
           powerup.start = Date.now();
           ship.powerups.push(powerup);
+          powerups.splice(i, 1);
           stage.removeChild(powerup);
+          i--;
         }else if(powerup.position.y > (renderer.height + powerup.height)){
           stage.removeChild(powerup);
           powerups.splice(i, 1);
           i--;
-        }else if(!isActive && !powerup.expired){
-          powerup.position.y += powerup.speed.y;
-        }else if(powerup.expired){
-          powerups.splice(i, 1);
-          i--;
+        }else{
+          powerup.render();
         }
       }
     },
@@ -247,7 +245,7 @@
         if(powerup.active()){
           var xPos = this.position.x + this.width / 2;
           var yPos = this.position.y;
-          powerup.render(xPos, yPos);
+          powerup.use(xPos, yPos);
         }else if(powerup.expired) {
           this.powerups.splice(i, 1);
           i--;
@@ -354,7 +352,10 @@
       }
       return false;
     };
-    this.render = function(xPos, yPos){};
+    this.render = function(){
+      this.position.y += this.speed.y;
+    };
+    this.use = function(xPos, yPos){};
   };
   Game.PowerUp.prototype = Object.create(PIXI.Sprite.prototype);
   Game.PowerUp.prototype.constructor = Game.PowerUp;
@@ -362,7 +363,7 @@
 
   Game.SpreadPowerUp = function(posX, posY){
     Game.PowerUp.call(this, posX, posY, Game.Resources.textures.spread);
-    this.render = function(xPos, yPos){
+    this.use = function(xPos, yPos){
       var topBullet = new Game.Bullet(xPos, yPos, -0.15);
       topBullet.speed.x = 6;
       topBullet.speed.y = -3;
