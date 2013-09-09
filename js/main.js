@@ -99,6 +99,7 @@
         var isActive = powerup.active();
         if(!isActive && self.checkCollision(ship, powerup)){
           powerup.start = Date.now();
+          ship.powerups.push(powerup);
           stage.removeChild(powerup);
         }else if(powerup.position.y > (renderer.height + powerup.height)){
           stage.removeChild(powerup);
@@ -112,25 +113,13 @@
         }
       }
     },
-    firePowerups: function(){
-      var ship = Game.Actors.ship;
-      var powerups = Game.Actors.powerups;
-      for(var i=0; i<powerups.length;i++){
-        var powerup = powerups[i];
-        if(powerup.active()){
-          var xPos = ship.position.x + ship.width / 2;
-          var yPos = ship.position.y;
-          powerup.render(xPos, yPos);
-        }
-      }
-    },
     renderBullets: function(){
       var bullets = Game.Actors.bullets;
       var stage = Game.Base.stage;
       for(var i = 0; i < bullets.length; i++){
         var bullet = bullets[i];
         if(bullet.visible){
-          bullet.render()
+          bullet.render();
         }else{
           bullets.splice(i, 1);
           stage.removeChild(bullet);
@@ -217,7 +206,7 @@
     this.speed = {
       x: 0,
       y: 0
-    }
+    };
   };
   Game.Ship.prototype = Object.create(PIXI.Sprite.prototype);
   Game.Ship.prototype.constructor = Game.Ship;
@@ -225,27 +214,50 @@
 
   Game.Player = function(){
     Game.Ship.call(this);
+    this.powerups = [];
     this.now = undefined;
     this.then = Date.now();
     this.firingInterval = 1000/15;
     this.firingDelta = undefined;
-    this.render = function(){
+    this.shoot = function(){
       if(this.shooting){
         this.now = Date.now();
         this.firingDelta = this.now - this.then;
         if(this.firingDelta > this.firingInterval){
           this.then = this.now;
+          if(this.powerups.length >= 1) {
+            this.shootPowerup();
+          }else {
+            this.shootNormal();
+          }
+        }
+    };
+    this.shootNormal = function(){
+        var xPos = this.position.x + this.width / 2;
+        var yPos = this.position.y;
+        var bullet = new Game.Bullet(xPos, yPos);
+        bullet.speed.x = 6;
+        Game.Actors.bullets.push(bullet);
+        Game.Base.stage.addChild(bullet);
+      }
+    };
+    this.shootPowerup = function(){
+      for(var i = 0;i < this.powerups.length; i++) {
+        var powerup = this.powerups[i];
+        if(powerup.active()){
           var xPos = this.position.x + this.width / 2;
           var yPos = this.position.y;
-          var bullet = new Game.Bullet(xPos, yPos);
-          bullet.speed.x = 6;
-          Game.Actors.bullets.push(bullet);
-          Game.Base.stage.addChild(bullet);
-          Game.Logic.firePowerups();
+          powerup.render(xPos, yPos);
+        }else if(powerup.expired) {
+          this.powerups.splice(i, 1);
+          i--;
         }
       }
     };
-  }
+    this.render = function(){
+      this.shoot();
+    };
+  };
   Game.Player.prototype = Object.create(Game.Ship.prototype);
   Game.Player.prototype.constructor = Game.Player;
 
@@ -269,7 +281,7 @@
       }else{
         this.visible = false;
         Game.Logic.gameover = true;
-      };
+      }
     };
   };
   Game.Enemy.prototype = Object.create(PIXI.Sprite.prototype);
@@ -291,7 +303,7 @@
       var renderer = Game.Base.renderer;
       return !((this.position.x > (renderer.width + this.width)) ||
               (this.position.y > (renderer.height + this.width)) ||
-              (this.position.y < (-this.width)))
+              (this.position.y < (-this.width)));
     };
     this.render = function(){
       var enemies = Game.Actors.enemies;
@@ -356,6 +368,11 @@
       topBullet.speed.y = -3;
       Game.Actors.bullets.push(topBullet);
       Game.Base.stage.addChild(topBullet);
+
+      var midBullet = new Game.Bullet(xPos, yPos);
+      midBullet.speed.x = 6;
+      Game.Actors.bullets.push(midBullet);
+      Game.Base.stage.addChild(midBullet);
 
       var botBullet = new Game.Bullet(xPos, yPos, 0.15);
       botBullet.speed.x = 6;
