@@ -5,8 +5,8 @@
 
   Game.Base = {
     bgcolor: 0x66FF99,
-    width: 1200,
-    height: 600,
+    width: jQuery(window).width() * 0.75,
+    height: jQuery(window).height() * 0.85,
     interactive: false,
     stats: new Stats(),
     renderer: undefined,
@@ -56,7 +56,7 @@
       var resources = Game.Resources;
       var backgroundTexture = resources.textures.background;
       // for some reason the image has to be square and 1024x1024 for it to work in FF
-      self.background = new PIXI.TilingSprite(backgroundTexture, 1200, 600, true);
+      self.background = new PIXI.TilingSprite(backgroundTexture, 2048, 2048, true);
       self.stage.addChild(self.background);
     },
     renderBackground: function(){
