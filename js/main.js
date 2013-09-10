@@ -30,7 +30,7 @@
     this.background = undefined;
     this.loadBackround = function(){
       var textures = Game.Resources.textures;
-      this.background = new PIXI.TilingSprite(textures.background, 2048, 2048, true);
+      this.background = new PIXI.TilingSprite(textures.background, 1200, 600, true);
       this.addChild(this.background);
     };
     this.renderBackground = function(){
@@ -209,8 +209,8 @@
 
   Game.Base = {
     bgcolor: 0x66FF99,
-    width: jQuery(window).width() * 0.75,
-    height: jQuery(window).height() * 0.85,
+    width: 0,
+    height: 0,
     stats: new Stats(),
     renderer: undefined,
     scene: undefined,
@@ -233,6 +233,14 @@
     },
     init: function(){
       var self = Game.Base;
+      var wwidth = jQuery(window).width() * 0.75;
+      var wheight = jQuery(window).height() * 0.85;
+      if (wwidth < 1200) {
+        self.width = wwidth;
+      } else {self.width = 1200};
+      if (wheight < 600) {
+        self.height = wheight;
+      } else {self.height = 600};
       self.renderer = PIXI.autoDetectRenderer(self.width, self.height);
       document.body.appendChild(self.renderer.view);
 
@@ -241,15 +249,12 @@
 
       self.loadStats();
       self.initScore();
-      Game.events();
 
       requestAnimFrame(self.animate);
     },
     animate: function(){
       var self = Game.Base;
       self.stats.begin();
-
-
 
       if (self.sceneName === 'main' && self.gameover === true) {
         self.sceneName = 'gameover';
