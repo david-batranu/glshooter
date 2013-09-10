@@ -22,7 +22,7 @@
   Game.Scene.prototype.constructor = Game.Scene;
 
   Game.MainScene = function(bgcolor, interactive){
-    PIXI.Stage.call(this, bgcolor, interactive);
+    Game.Scene.call(this, bgcolor, interactive);
     this.bullets = [];
     this.enemies = [];
     this.powerups = [];
@@ -109,16 +109,37 @@
       }
     };
     this.render = function(){
-      if(!Game.Base.gameover){
-        this.renderBackground();
-        this.spawnEnemies();
-        this.renderEnemies();
-        this.ship.render();
-        this.renderBullets();
-        this.renderPowerups();
-      } else {
-        alert("GAME OVER! You made it to "+ this.ship.score +" points");
-        location.reload(false);
+      this.renderBackground();
+      this.spawnEnemies();
+      this.renderEnemies();
+      this.ship.render();
+      this.renderBullets();
+      this.renderPowerups();
+    };
+    this.events = {
+      onmousemove: function(evt){
+        this.ship.position.x = evt.clientX - Game.Base.renderer.view.offsetLeft;
+        this.ship.position.y = evt.clientY - Game.Base.renderer.view.offsetTop;
+      },
+      ontouchmove: function(evt){
+        this.ship.position.x = evt.clientX - Game.Base.renderer.view.offsetLeft;
+        this.ship.position.y = evt.clientY - Game.Base.renderer.view.offsetTop;
+      },
+      onmousedown: function(evt){
+        this.ship.shooting = true;
+      },
+      ontouchstart: function(evt){
+        this.ship.shooting = true;
+      },
+      onmouseup: function(evt){
+        this.ship.shooting = false;
+      },
+      ontouchend: function(evt){
+        this.ship.shooting = false;
+      },
+      onselectstart: function(evt) {
+        // hide text select cursor (beam)
+        return false;
       }
     };
     this.initPlayer = function(){
@@ -135,11 +156,48 @@
   Game.MainScene.prototype.constructor = Game.MainScene;
 
 
+  Game.GameOverScene = function(){
+    Game.Scene.call(this, 0x242424);
+    this.text = '';
+    this.init = function(){
+      var renderer = Game.Base.renderer;
+      var text = '! GAME OVER !\n\n You made it to ' + Game.Base.score.innerHTML + ' points!';
+      text = text + '\n\n\n\n Click to try again!'
+      var textDisplay = new PIXI.Text(text, {align: 'center', fill: 'white'});
+      textDisplay.anchor.x = 0.5;
+      textDisplay.anchor.y = 0.5;
+      textDisplay.position.x = renderer.width / 2;
+      textDisplay.position.y = renderer.height / 3;
+      this.text = text;
+      this.addChild(textDisplay);
+    };
+    this.render = function(){};
+    this.events = {
+      onmousedown: function(evt){
+        Game.Base.score.innerHTML = 0;
+        Game.Base.sceneName = 'main';
+        Game.Base.gameover = false;
+        Game.Base.scene = Game.Scenes.switchTo('main');
+        Game.events();
+      },
+      onmousemove: function(){},
+      ontouchmove: function(){},
+      ontouchstart: function(){},
+      onmouseup: function(){},
+      ontouchend: function(){},
+      onselectstart: function(){return true}
+    };
+    this.init()
+  };
+  Game.GameOverScene.prototype = Object.create(Game.Scene.prototype);
+  Game.GameOverScene.prototype.constructor = Game.GameOverScene;
+
+
   Game.Scenes = {
     current: '',
     menu: undefined,
     main: Game.MainScene,
-    gameover: undefined,
+    gameover: Game.GameOverScene,
     switchTo: function(name){
       if (this.current !== '') {
         delete this.current;
@@ -155,8 +213,8 @@
     height: jQuery(window).height() * 0.85,
     stats: new Stats(),
     renderer: undefined,
-    stage: undefined,
-    scene: 'main',
+    scene: undefined,
+    sceneName: 'main',
     score: undefined,
     gameover: false,
     loadStats: function(){
@@ -178,7 +236,8 @@
       self.renderer = PIXI.autoDetectRenderer(self.width, self.height);
       document.body.appendChild(self.renderer.view);
 
-      self.stage = Game.Scenes.switchTo(self.scene);
+      self.scene = Game.Scenes.switchTo(self.sceneName);
+      Game.events();
 
       self.loadStats();
       self.initScore();
@@ -190,8 +249,16 @@
       var self = Game.Base;
       self.stats.begin();
 
-      self.stage.render();
-      self.renderer.render(self.stage);
+
+
+      if (self.sceneName === 'main' && self.gameover === true) {
+        self.sceneName = 'gameover';
+        self.scene = Game.Scenes.switchTo(self.sceneName);
+        Game.events();
+      }
+
+      self.scene.render();
+      self.renderer.render(self.scene);
 
       requestAnimFrame(self.animate);
 
@@ -257,8 +324,8 @@
         var yPos = this.position.y;
         var bullet = new Game.Bullet(xPos, yPos);
         bullet.speed.x = 6;
-        Game.Base.stage.bullets.push(bullet);
-        Game.Base.stage.addChild(bullet);
+        Game.Base.scene.bullets.push(bullet);
+        Game.Base.scene.addChild(bullet);
       }
     };
     this.shootPowerup = function(){
@@ -293,7 +360,7 @@
       y: 0
     },
     this.render = function(){
-      var ship = Game.Base.stage.ship;
+      var ship = Game.Base.scene.ship;
       if(Game.Logic.checkCollision(this, ship)){
         Game.Base.gameover = true;
       }else if(this.position.x > -this.width){ // outside left screen edge when true
@@ -326,8 +393,8 @@
               (this.position.y < (-this.width)));
     };
     this.render = function(){
-      var stage = Game.Base.stage;
-      var enemies = stage.enemies;
+      var scene = Game.Base.scene;
+      var enemies = scene.enemies;
       if(!this.inViewport()){
         this.visble = false;
       }else {
@@ -338,7 +405,7 @@
             this.visible = false;
             var currentScore = parseInt(Game.Base.score.innerHTML, 10);
             currentScore += 10;
-            stage.ship.score = currentScore;
+            scene.ship.score = currentScore;
             Game.Base.score.innerHTML = currentScore;
           }
         }
@@ -390,19 +457,19 @@
       var topBullet = new Game.Bullet(xPos, yPos, -0.15);
       topBullet.speed.x = 6;
       topBullet.speed.y = -3;
-      Game.Base.stage.bullets.push(topBullet);
-      Game.Base.stage.addChild(topBullet);
+      Game.Base.scene.bullets.push(topBullet);
+      Game.Base.scene.addChild(topBullet);
 
       var midBullet = new Game.Bullet(xPos, yPos);
       midBullet.speed.x = 6;
-      Game.Base.stage.bullets.push(midBullet);
-      Game.Base.stage.addChild(midBullet);
+      Game.Base.scene.bullets.push(midBullet);
+      Game.Base.scene.addChild(midBullet);
 
       var botBullet = new Game.Bullet(xPos, yPos, 0.15);
       botBullet.speed.x = 6;
       botBullet.speed.y = 3;
-      Game.Base.stage.bullets.push(botBullet);
-      Game.Base.stage.addChild(botBullet);
+      Game.Base.scene.bullets.push(botBullet);
+      Game.Base.scene.addChild(botBullet);
     };
   };
   Game.SpreadPowerUp.prototype = Object.create(PIXI.Sprite.prototype);
@@ -412,33 +479,34 @@
 
   Game.events = function(){
     var renderer = Game.Base.renderer;
-    var ship = Game.Base.stage.ship;
+    var scene = Game.Base.scene;
+    renderer.view.onmousemove = null;
+    renderer.view.ontouchmove = null;
+    renderer.view.onmousedown = null;
+    renderer.view.ontouchstart = null;
+    renderer.view.onmouseup = null;
+    renderer.view.ontouchend = null;
+    renderer.view.onselectstart = null;
     renderer.view.onmousemove = function(evt){
-      ship.position.x = evt.clientX - renderer.view.offsetLeft;
-      ship.position.y = evt.clientY - renderer.view.offsetTop;
+      scene.events.onmousemove.call(scene, evt);
     };
     renderer.view.ontouchmove = function(evt){
-      ship.position.x = evt.clientX - renderer.view.offsetLeft;
-      ship.position.y = evt.clientY - renderer.view.offsetTop;
+      scene.events.ontouchmove.call(scene, evt);
     };
-
     renderer.view.onmousedown = function(evt){
-      ship.shooting = true;
+      scene.events.onmousedown.call(scene, evt);
     };
     renderer.view.ontouchstart = function(evt){
-      ship.shooting = true;
+      scene.events.ontouchstart.call(scene, evt);
     };
-
     renderer.view.onmouseup = function(evt){
-      ship.shooting = false;
+      scene.events.onmouseup.call(scene, evt);
     };
     renderer.view.ontouchend = function(evt){
-      ship.shooting = false;
+      scene.events.ontouchend.call(scene, evt);
     };
-
-    // hide text select cursor (beam)
     renderer.view.onselectstart = function(evt) {
-      return false;
+      scene.events.onselectstart.call(scene, evt);
     };
   };
   if(window.Game === undefined){ window.Game = Game; }
