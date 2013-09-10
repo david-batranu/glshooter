@@ -3,15 +3,162 @@
     version: '1.0'
   };
 
+  Game.Resources = {
+    textures: {
+      bullet: new PIXI.Texture.fromImage('img/beam.png'),
+      ship: new PIXI.Texture.fromImage('img/ship.png'),
+      enemy: new PIXI.Texture.fromImage('img/enemy.png'),
+      square: new PIXI.Texture.fromImage('img/square.png'),
+      spread: new PIXI.Texture.fromImage('img/spread.png'),
+      background: new PIXI.Texture.fromImage('img/background.png')
+    }
+  };
+
+  Game.Scene = function(bgcolor, interactive){
+    PIXI.Stage.call(this, bgcolor, interactive);
+    this.render = function(){};
+  };
+  Game.Scene.prototype = Object.create(PIXI.Stage.prototype);
+  Game.Scene.prototype.constructor = Game.Scene;
+
+  Game.MainScene = function(bgcolor, interactive){
+    PIXI.Stage.call(this, bgcolor, interactive);
+    this.bullets = [];
+    this.enemies = [];
+    this.powerups = [];
+    this.ship = undefined;
+    this.background = undefined;
+    this.loadBackround = function(){
+      var textures = Game.Resources.textures;
+      this.background = new PIXI.TilingSprite(textures.background, 2048, 2048, true);
+      this.addChild(this.background);
+    };
+    this.renderBackground = function(){
+      var speed = 0.5;
+      this.background.tilePosition.x -= speed;
+    };
+    this.renderPowerups = function(){
+      var renderer = Game.Base.renderer;
+      if((this.ship.powerups.length < 1 && this.powerups.length < 1) && (this.ship.score % 500) === 0){
+        var newPowerup = new Game.SpreadPowerUp(renderer.width/2, 0);
+        newPowerup.speed.y = 1;
+        this.addChild(newPowerup);
+        this.powerups.push(newPowerup);
+      }
+      for(var i=0; i<this.powerups.length;i++){
+        var powerup = this.powerups[i];
+        if(Game.Logic.checkCollision(this.ship, powerup)){
+          powerup.start = Date.now();
+          this.ship.powerups.push(powerup);
+          this.powerups.splice(i, 1);
+          this.removeChild(powerup);
+          i--;
+        }else if(powerup.position.y > (renderer.height + powerup.height)){
+          this.removeChild(powerup);
+          this.powerups.splice(i, 1);
+          i--;
+        }else{
+          powerup.render();
+        }
+      }
+    };
+    this.renderBullets = function(){
+      for(var i = 0; i < this.bullets.length; i++){
+        var bullet = this.bullets[i];
+        if(bullet.visible){
+          bullet.render();
+        }else{
+          this.bullets.splice(i, 1);
+          this.removeChild(bullet);
+          i--;
+        }
+      }
+    };
+    this.spawnEnemies = function(){
+      var renderer = Game.Base.renderer;
+
+      if(this.enemies.length < 30) {
+        var xPos = Game.Logic.getRandomInt(renderer.width, renderer.width + 500);
+        var yPos = Game.Logic.getRandomInt(0, renderer.height);
+        var newEnemy = new Game.Enemy(xPos, yPos);
+        newEnemy.speed.x = (this.ship.score/500);
+        var isColliding = false;
+        for(var x = 0; x < this.enemies.length; x++){
+          var enemy = this.enemies[x];
+          if(enemy && Game.Logic.checkCollision(newEnemy, enemy)){
+            isColliding = true;
+            break;
+          }
+        }
+        if(!isColliding){
+          this.enemies.push(newEnemy);
+          this.addChild(newEnemy);
+        }
+      }
+    };
+    this.renderEnemies = function(){
+      for(var x = 0; x < this.enemies.length; x++){
+        var enemy = this.enemies[x];
+        if(enemy.visible) {
+          enemy.render();
+        }else{
+          this.enemies.splice(x, 1);
+          this.removeChild(enemy);
+          x--;
+        }
+      }
+    };
+    this.render = function(){
+      if(!Game.Base.gameover){
+        this.renderBackground();
+        this.spawnEnemies();
+        this.renderEnemies();
+        this.ship.render();
+        this.renderBullets();
+        this.renderPowerups();
+      } else {
+        alert("GAME OVER! You made it to "+ this.ship.score +" points");
+        location.reload(false);
+      }
+    };
+    this.initPlayer = function(){
+      this.ship = new Game.Player();
+      this.addChild(this.ship);
+    }
+    this.init = function(){
+      this.loadBackround();
+      this.initPlayer();
+    };
+    this.init();
+  };
+  Game.MainScene.prototype = Object.create(Game.Scene.prototype);
+  Game.MainScene.prototype.constructor = Game.MainScene;
+
+
+  Game.Scenes = {
+    current: '',
+    menu: undefined,
+    main: Game.MainScene,
+    gameover: undefined,
+    switchTo: function(name){
+      if (this.current !== '') {
+        delete this.current;
+      }
+      this.current = name;
+      return new this[name]();
+    }
+  };
+
   Game.Base = {
     bgcolor: 0x66FF99,
     width: jQuery(window).width() * 0.75,
     height: jQuery(window).height() * 0.85,
-    interactive: false,
     stats: new Stats(),
     renderer: undefined,
     stage: undefined,
-    background: null,
+    scene: 'main',
+    score: undefined,
+    gameover: false,
     loadStats: function(){
       var self = Game.Base;
       self.stats.setMode(0);
@@ -28,14 +175,13 @@
     },
     init: function(){
       var self = Game.Base;
-      self.stage = new PIXI.Stage(self.bgcolor, self.interactive);
       self.renderer = PIXI.autoDetectRenderer(self.width, self.height);
       document.body.appendChild(self.renderer.view);
 
-      self.loadBackround();
+      self.stage = Game.Scenes.switchTo(self.scene);
+
       self.loadStats();
       self.initScore();
-      Game.Actors.init();
       Game.events();
 
       requestAnimFrame(self.animate);
@@ -44,31 +190,17 @@
       var self = Game.Base;
       self.stats.begin();
 
-      self.renderBackground();
-      Game.Logic.run();
+      self.stage.render();
       self.renderer.render(self.stage);
+
       requestAnimFrame(self.animate);
 
       self.stats.end();
     },
-    loadBackround: function(){
-      var self = Game.Base;
-      var resources = Game.Resources;
-      var backgroundTexture = resources.textures.background;
-      // for some reason the image has to be square and 1024x1024 for it to work in FF
-      self.background = new PIXI.TilingSprite(backgroundTexture, 2048, 2048, true);
-      self.stage.addChild(self.background);
-    },
-    renderBackground: function(){
-      var self = Game.Base;
-      var speed = 0.5;
-      self.background.tilePosition.x -= speed;
-    }
+
   };
 
   Game.Logic = {
-    score: 0,
-    gameover: false,
     getRandomInt: function(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     },
@@ -80,118 +212,7 @@
       return (o1x + obj1.width) >= o2x && o1x <= (o2x + obj2.width) &&
         (o1y + obj1.height) >= o2y && o1y <= (o2y + obj2.height);
     },
-    renderPowerups: function(){
-      var self = Game.Logic;
-      var ship = Game.Actors.ship;
-      var powerups = Game.Actors.powerups;
-      var renderer = Game.Base.renderer;
-      var stage = Game.Base.stage;
-
-      if((ship.powerups.length < 1 && powerups.length < 1) && (self.score % 500) === 0){
-        var newPowerup = new Game.SpreadPowerUp(renderer.width/2, 0);
-        newPowerup.speed.y = 1;
-        stage.addChild(newPowerup);
-        powerups.push(newPowerup);
-      }
-
-      for(var i=0; i<powerups.length;i++){
-        var powerup = powerups[i];
-        if(self.checkCollision(ship, powerup)){
-          powerup.start = Date.now();
-          ship.powerups.push(powerup);
-          powerups.splice(i, 1);
-          stage.removeChild(powerup);
-          i--;
-        }else if(powerup.position.y > (renderer.height + powerup.height)){
-          stage.removeChild(powerup);
-          powerups.splice(i, 1);
-          i--;
-        }else{
-          powerup.render();
-        }
-      }
-    },
-    renderBullets: function(){
-      var bullets = Game.Actors.bullets;
-      var stage = Game.Base.stage;
-      for(var i = 0; i < bullets.length; i++){
-        var bullet = bullets[i];
-        if(bullet.visible){
-          bullet.render();
-        }else{
-          bullets.splice(i, 1);
-          stage.removeChild(bullet);
-          i--;
-        }
-      }
-    },
-    spawnEnemies: function(){
-      var self = Game.Logic;
-      var enemies = Game.Actors.enemies;
-      var renderer = Game.Base.renderer;
-
-      if(enemies.length < 30) {
-        var xPos = self.getRandomInt(renderer.width, renderer.width + 500);
-        var yPos = self.getRandomInt(0, renderer.height);
-        var newEnemy = new Game.Enemy(xPos, yPos);
-        newEnemy.speed.x = (self.score/500);
-        (function(){
-          var isColliding = false;
-          for(var x = 0; x < enemies.length; x++){
-            var enemy = enemies[x];
-            if(enemy && self.checkCollision(newEnemy, enemy)){
-              isColliding = true;
-              break;
-            }
-          }
-          if(!isColliding){
-            enemies.push(newEnemy);
-            Game.Base.stage.addChild(newEnemy);
-          }
-        })();
-      }
-    },
-    renderEnemies: function(){
-      var stage = Game.Base.stage;
-      var enemies = Game.Actors.enemies;
-
-      for(var x = 0; x < enemies.length; x++){
-        var enemy = enemies[x];
-        if(enemy.visible) {
-          enemy.render();
-        }else{
-          enemies.splice(x, 1);
-          stage.removeChild(enemy);
-          x--;
-        }
-      }
-    },
-    run: function(){
-      var self = Game.Logic;
-      if(!self.gameover){
-        self.spawnEnemies();
-        self.renderEnemies();
-        Game.Actors.ship.render();
-        self.renderBullets();
-        self.renderPowerups();
-      } else {
-        alert("GAME OVER! You made it to "+ self.score +" points");
-        location.reload(false);
-      }
-    }
   };
-
-  Game.Resources = {
-    textures: {
-      bullet: new PIXI.Texture.fromImage('img/beam.png'),
-      ship: new PIXI.Texture.fromImage('img/ship.png'),
-      enemy: new PIXI.Texture.fromImage('img/enemy.png'),
-      square: new PIXI.Texture.fromImage('img/square.png'),
-      spread: new PIXI.Texture.fromImage('img/spread.png'),
-      background: new PIXI.Texture.fromImage('img/background.png')
-    }
-  };
-
 
   Game.Ship = function(){
     PIXI.Sprite.call(this, Game.Resources.textures.ship);
@@ -212,6 +233,7 @@
 
   Game.Player = function(){
     Game.Ship.call(this);
+    this.score = 0;
     this.powerups = [];
     this.now = undefined;
     this.then = Date.now();
@@ -235,7 +257,7 @@
         var yPos = this.position.y;
         var bullet = new Game.Bullet(xPos, yPos);
         bullet.speed.x = 6;
-        Game.Actors.bullets.push(bullet);
+        Game.Base.stage.bullets.push(bullet);
         Game.Base.stage.addChild(bullet);
       }
     };
@@ -271,14 +293,14 @@
       y: 0
     },
     this.render = function(){
-      var ship = Game.Actors.ship;
+      var ship = Game.Base.stage.ship;
       if(Game.Logic.checkCollision(this, ship)){
-        Game.Logic.gameover = true;
+        Game.Base.gameover = true;
       }else if(this.position.x > -this.width){ // outside left screen edge when true
         this.position.x -= this.speed.x + 1;
       }else{
         this.visible = false;
-        Game.Logic.gameover = true;
+        Game.Base.gameover = true;
       }
     };
   };
@@ -304,7 +326,8 @@
               (this.position.y < (-this.width)));
     };
     this.render = function(){
-      var enemies = Game.Actors.enemies;
+      var stage = Game.Base.stage;
+      var enemies = stage.enemies;
       if(!this.inViewport()){
         this.visble = false;
       }else {
@@ -315,7 +338,7 @@
             this.visible = false;
             var currentScore = parseInt(Game.Base.score.innerHTML, 10);
             currentScore += 10;
-            Game.Logic.score = currentScore;
+            stage.ship.score = currentScore;
             Game.Base.score.innerHTML = currentScore;
           }
         }
@@ -367,18 +390,18 @@
       var topBullet = new Game.Bullet(xPos, yPos, -0.15);
       topBullet.speed.x = 6;
       topBullet.speed.y = -3;
-      Game.Actors.bullets.push(topBullet);
+      Game.Base.stage.bullets.push(topBullet);
       Game.Base.stage.addChild(topBullet);
 
       var midBullet = new Game.Bullet(xPos, yPos);
       midBullet.speed.x = 6;
-      Game.Actors.bullets.push(midBullet);
+      Game.Base.stage.bullets.push(midBullet);
       Game.Base.stage.addChild(midBullet);
 
       var botBullet = new Game.Bullet(xPos, yPos, 0.15);
       botBullet.speed.x = 6;
       botBullet.speed.y = 3;
-      Game.Actors.bullets.push(botBullet);
+      Game.Base.stage.bullets.push(botBullet);
       Game.Base.stage.addChild(botBullet);
     };
   };
@@ -386,21 +409,10 @@
   Game.SpreadPowerUp.prototype.constructor = Game.SpreadPowerUp;
 
 
-  Game.Actors = {
-    bullets: [],
-    enemies: [],
-    powerups: [],
-    ship: undefined,
-    init: function(){
-      var self = Game.Actors;
-      self.ship = new Game.Player();
-      Game.Base.stage.addChild(self.ship);
-    }
-  };
 
   Game.events = function(){
     var renderer = Game.Base.renderer;
-    var ship = Game.Actors.ship;
+    var ship = Game.Base.stage.ship;
     renderer.view.onmousemove = function(evt){
       ship.position.x = evt.clientX - renderer.view.offsetLeft;
       ship.position.y = evt.clientY - renderer.view.offsetTop;
@@ -430,6 +442,6 @@
     };
   };
   if(window.Game === undefined){ window.Game = Game; }
-  Game.Base.init(0x66FF99);
+  Game.Base.init();
 
 })();
