@@ -231,7 +231,7 @@
       score = document.getElementById('score');
       score.style.left = self.renderer.view.offsetLeft - 80 + 'px';
     },
-    init: function(){
+    setDimensions: function(){
       var self = Game.Base;
       var wwidth = jQuery(window).width() * 0.75;
       var wheight = jQuery(window).height() * 0.85;
@@ -241,6 +241,20 @@
       if (wheight < 600) {
         self.height = wheight;
       } else {self.height = 600};
+    },
+    updateDimensions: function(){
+      var self = Game.Base;
+      self.setDimensions();
+      try {
+        self.renderer.resize(self.width, self.height);
+      } catch(e) {
+        self.renderer.width = self.width;
+        self.renderer.height = self.height;
+      }
+    },
+    init: function(){
+      var self = Game.Base;
+      self.setDimensions();
       self.renderer = PIXI.autoDetectRenderer(self.width, self.height);
       document.body.appendChild(self.renderer.view);
 
@@ -255,6 +269,9 @@
     animate: function(){
       var self = Game.Base;
       self.stats.begin();
+
+      jQuery(self.renderer.view).removeClass();
+      jQuery(self.renderer.view).addClass(self.sceneName);
 
       if (self.sceneName === 'main' && self.gameover === true) {
         self.sceneName = 'gameover';
@@ -493,26 +510,29 @@
     renderer.view.ontouchend = null;
     renderer.view.onselectstart = null;
     renderer.view.onmousemove = function(evt){
-      scene.events.onmousemove.call(scene, evt);
+      return scene.events.onmousemove.call(scene, evt);
     };
     renderer.view.ontouchmove = function(evt){
-      scene.events.ontouchmove.call(scene, evt);
+      return scene.events.ontouchmove.call(scene, evt);
     };
     renderer.view.onmousedown = function(evt){
-      scene.events.onmousedown.call(scene, evt);
+      return scene.events.onmousedown.call(scene, evt);
     };
     renderer.view.ontouchstart = function(evt){
-      scene.events.ontouchstart.call(scene, evt);
+      return scene.events.ontouchstart.call(scene, evt);
     };
     renderer.view.onmouseup = function(evt){
-      scene.events.onmouseup.call(scene, evt);
+      return scene.events.onmouseup.call(scene, evt);
     };
     renderer.view.ontouchend = function(evt){
-      scene.events.ontouchend.call(scene, evt);
+      return scene.events.ontouchend.call(scene, evt);
     };
     renderer.view.onselectstart = function(evt) {
-      scene.events.onselectstart.call(scene, evt);
+      return scene.events.onselectstart.call(scene, evt);
     };
+    jQuery(window).resize(function(){
+      Game.Base.updateDimensions()
+    });
   };
   if(window.Game === undefined){ window.Game = Game; }
   Game.Base.init();
