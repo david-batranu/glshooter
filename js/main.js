@@ -380,7 +380,22 @@
     this.speed = {
       x: 0,
       y: 0
-    },
+    };
+    this.die = function(){
+      var movie = new PIXI.MovieClip(this.animationData.death.sequence);
+      movie.anchor.x = 0.5;
+      movie.anchor.y = 0.5;
+      movie.position.x = this.position.x;
+      movie.position.y = this.position.y;
+      Game.Base.scene.addChild(movie);
+      movie.onComplete = function(){
+        this.visible = false;
+      };
+      movie.animationSpeed = 0.2;
+      movie.loop = false;
+      movie.play();
+      this.visible = false;
+    };
     this.render = function(){
       var ship = Game.Base.scene.ship;
       if(Game.Logic.checkCollision(this, ship)){
@@ -395,6 +410,19 @@
   };
   Game.Enemy.prototype = Object.create(PIXI.Sprite.prototype);
   Game.Enemy.prototype.constructor = Game.Enemy;
+  Game.Enemy.prototype.animationData = {
+    death: {
+      sequence: [],
+      movie: undefined
+    }
+  };
+  Game.Enemy.prototype.loadAnimation = function(imageList){
+    var mediaSequence = []
+    for(var textureId in imageList){
+      mediaSequence.push(new PIXI.Texture.fromImage(textureId));
+    }
+    this.animationData.death.sequence = mediaSequence;
+  };
 
 
   Game.Bullet = function(posX, posY, rotation){
@@ -423,7 +451,7 @@
         for(var x = 0; x < enemies.length; x++){
           var enemy = enemies[x];
           if(Game.Logic.checkCollision(this, enemy)){
-            enemy.visible = false;
+            enemy.die();
             this.visible = false;
             var currentScore = parseInt(Game.Base.score.innerHTML, 10);
             currentScore += 10;
@@ -535,6 +563,13 @@
     });
   };
   if(window.Game === undefined){ window.Game = Game; }
-  Game.Base.init();
+
+  var enemyAnimationLoader = new PIXI.SpriteSheetLoader('img/enemy.json', false);
+  enemyAnimationLoader.load();
+  enemyAnimationLoader.addEventListener('loaded', function(data){
+    Game.Enemy.prototype.loadAnimation(data.content.json.frames);
+    Game.Base.init();
+  });
+
 
 })();
