@@ -3,6 +3,25 @@
     version: '1.0'
   };
 
+  Game.Level1 = [
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'E', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S'],
+    ['S', 'S', 'E', 'S', 'S', 'S', 'E', 'E', 'S', 'E', 'E', 'S', 'S', 'S', 'E', 'S', 'S'],
+    ['S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'E', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S'],
+    ['S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S'],
+    ['S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S']
+  ]
+
+
   Game.Resources = {
     textures: {
       bullet: new PIXI.Texture.fromImage('img/beam.png'),
@@ -74,27 +93,27 @@
         }
       }
     };
+    this.lastEnemyPos = new PIXI.Point(Game.Base.width, 0);
     this.spawnEnemies = function(){
       var renderer = Game.Base.renderer;
 
-      if(this.enemies.length < 30) {
-        var xPos = Game.Logic.getRandomInt(renderer.width, renderer.width + 500);
-        var yPos = Game.Logic.getRandomInt(0, renderer.height);
-        var newEnemy = new Game.Enemy(xPos, yPos);
-        newEnemy.speed.x = (this.ship.score/500);
-        var isColliding = false;
-        for(var x = 0; x < this.enemies.length; x++){
-          var enemy = this.enemies[x];
-          if(enemy && Game.Logic.checkCollision(newEnemy, enemy)){
-            isColliding = true;
-            break;
+      if(this.enemies.length > 0){ return };
+
+      for(var cidx = 0; cidx < Game.Level1.length; cidx++) {
+        var row = Game.Level1[cidx];
+        for(var idx = 0; idx < row.length; idx++){
+          var item = row[idx];
+          var xPos = Game.Base.width + ((cidx + 1) * Game.Resources.textures.enemy.width);
+          var yPos = ((idx + 1) * Game.Resources.textures.enemy.height);
+          if (item == 'E') {
+            var newEnemy = new Game.Enemy(xPos, yPos);
+
+            this.enemies.push(newEnemy);
+            this.addChild(newEnemy);
           }
+          this.lastEnemyPos = new PIXI.Point(xPos, yPos);
         }
-        if(!isColliding){
-          this.enemies.push(newEnemy);
-          this.addChild(newEnemy);
-        }
-      }
+      };
     };
     this.renderEnemies = function(){
       for(var x = 0; x < this.enemies.length; x++){
@@ -298,6 +317,12 @@
     this.scale = new PIXI.Point(Game.Base.scale, Game.Base.scale);
     this.anchor.x = 0.5;
     this.anchor.y = 0.5;
+    this.inViewport = function(){
+      var renderer = Game.Base.renderer;
+      return !((this.position.x > (renderer.width + this.width)) ||
+              (this.position.y > (renderer.height + this.width)) ||
+              (this.position.y < (-this.width)));
+    };
   };
 
   Game.Logic = {
@@ -412,13 +437,13 @@
       if(Game.Logic.checkCollision(this, ship)){
         Game.Base.gameover = true;
       }else if(this.position.x > -this.width){ // outside left screen edge when true
+        this.speed.x = ship.score / 500;
         this.position.x -= this.speed.x + 1;
       }else{
         this.visible = false;
         Game.Base.gameover = true;
       }
     };
-    console.log(Game.Base.scale);
   };
   Game.Enemy.prototype = Object.create(PIXI.Sprite.prototype);
   Game.Enemy.prototype.constructor = Game.Enemy;
@@ -447,15 +472,11 @@
       x: 0,
       y: 0
     };
-    this.inViewport = function(){
-      var renderer = Game.Base.renderer;
-      return !((this.position.x > (renderer.width + this.width)) ||
-              (this.position.y > (renderer.height + this.width)) ||
-              (this.position.y < (-this.width)));
-    };
     this.render = function(){
       var scene = Game.Base.scene;
-      var enemies = scene.enemies;
+      var enemies = jQuery.grep(scene.enemies, function(enemy) {
+        return enemy.inViewport();
+      });
       if(!this.inViewport()){
         this.visble = false;
       }else {
