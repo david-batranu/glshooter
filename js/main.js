@@ -209,6 +209,9 @@
 
   Game.Base = {
     bgcolor: 0x66FF99,
+    scale: 1,
+    maxWidth: 1200,
+    maxHeight: 600,
     width: 0,
     height: 0,
     stats: new Stats(),
@@ -235,12 +238,13 @@
       var self = Game.Base;
       var wwidth = jQuery(window).width() * 0.75;
       var wheight = jQuery(window).height() * 0.85;
-      if (wwidth < 1200) {
+      if (wwidth < self.maxWidth) {
         self.width = wwidth;
-      } else {self.width = 1200};
-      if (wheight < 600) {
+      } else {self.width = self.maxWidth};
+      if (wheight < self.maxHeight) {
         self.height = wheight;
-      } else {self.height = 600};
+      } else {self.height = self.maxHeight};
+      self.scale = Math.min(self.width / self.maxWidth, self.height / self.maxHeight);
     },
     updateDimensions: function(){
       var self = Game.Base;
@@ -259,6 +263,7 @@
       document.body.appendChild(self.renderer.view);
 
       self.scene = Game.Scenes.switchTo(self.sceneName);
+
       Game.events();
 
       self.loadStats();
@@ -289,6 +294,12 @@
 
   };
 
+  Game.GlobalSprite = function(){
+    this.scale = new PIXI.Point(Game.Base.scale, Game.Base.scale);
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+  };
+
   Game.Logic = {
     getRandomInt: function(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -305,8 +316,8 @@
 
   Game.Ship = function(){
     PIXI.Sprite.call(this, Game.Resources.textures.ship);
-    this.anchor.x = 0.5;
-    this.anchor.y = 0.5;
+    Game.GlobalSprite.call(this);
+
     this.position.x = Game.Base.renderer.width / 2;
     this.position.y = Game.Base.renderer.height / 2;
     this.shooting = false;
@@ -373,8 +384,7 @@
 
   Game.Enemy = function(posX, posY){
     PIXI.Sprite.call(this, Game.Resources.textures.enemy);
-    this.anchor.x = 0.5;
-    this.anchor.y = 0.5;
+    Game.GlobalSprite.call(this);
     this.position.x = posX || Game.Base.renderer.width;
     this.position.y = posY || Game.Base.renderer.height / 2;
     this.speed = {
@@ -385,6 +395,7 @@
       var movie = new PIXI.MovieClip(this.animationData.death.sequence);
       movie.anchor.x = 0.5;
       movie.anchor.y = 0.5;
+      movie.scale = this.scale;
       movie.position.x = this.position.x;
       movie.position.y = this.position.y;
       Game.Base.scene.addChild(movie);
@@ -407,6 +418,7 @@
         Game.Base.gameover = true;
       }
     };
+    console.log(Game.Base.scale);
   };
   Game.Enemy.prototype = Object.create(PIXI.Sprite.prototype);
   Game.Enemy.prototype.constructor = Game.Enemy;
@@ -427,8 +439,7 @@
 
   Game.Bullet = function(posX, posY, rotation){
     PIXI.Sprite.call(this, Game.Resources.textures.bullet);
-    this.anchor.x = 0.5;
-    this.anchor.y = 0.5;
+    Game.GlobalSprite.call(this);
     this.position.x = posX;
     this.position.y = posY;
     this.rotation = rotation || 0;
@@ -470,8 +481,7 @@
 
   Game.PowerUp = function(posX, posY, texture){
     PIXI.Sprite.call(this, texture);
-    this.anchor.x = 0.5;
-    this.anchor.y = 0.5;
+    Game.GlobalSprite.call(this);
     this.position.x = posX;
     this.position.y = posY;
     this.start = undefined;
