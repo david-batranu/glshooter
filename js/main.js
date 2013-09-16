@@ -3,23 +3,42 @@
     version: '1.0'
   };
 
-  Game.Level1 = [
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'E', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S'],
-    ['S', 'S', 'E', 'S', 'S', 'S', 'E', 'E', 'S', 'E', 'E', 'S', 'S', 'S', 'E', 'S', 'S'],
-    ['S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'E', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S'],
-    ['S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S'],
-    ['S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S']
-  ]
+  Game.Levels = {
+    1: [
+      ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'E', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S'],
+      ['S', 'S', 'E', 'S', 'S', 'S', 'E', 'E', 'S', 'E', 'E', 'S', 'S', 'S', 'E', 'S', 'S'],
+      ['S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'E', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S'],
+      ['S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S']
+    ],
+    2: [
+      ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S'],
+      ['E', 'S', 'E', 'S', 'E', 'S', 'E', 'S', 'E', 'S', 'E', 'S', 'E', 'S', 'E', 'S', 'E'],
+      ['S', 'E', 'S', 'S', 'E', 'S', 'S', 'E', 'S', 'E', 'S', 'S', 'E', 'S', 'S', 'E', 'S'],
+      ['S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S'],
+      ['S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'],
+      ['S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S'],
+      ['S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S'],
+      ['S', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'S'],
+      ['S', 'E', 'S', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'S', 'E', 'S'],
+      ['E', 'S', 'E', 'S', 'S', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'S', 'S', 'E', 'S', 'E'],
+      ['E', 'E', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'E', 'E'],
+      ['E', 'S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S', 'E'],
+      ['S', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'E', 'E', 'S', 'S', 'S', 'S', 'S', 'E', 'S'],
+      ['S', 'E', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'E', 'S'],
+    ]
+  };
 
 
   Game.Resources = {
@@ -45,6 +64,7 @@
     this.bullets = [];
     this.enemies = [];
     this.powerups = [];
+    this.level = 1;
     this.ship = undefined;
     this.background = undefined;
     this.loadBackround = function(){
@@ -99,8 +119,8 @@
 
       if(this.enemies.length > 0){ return };
 
-      for(var cidx = 0; cidx < Game.Level1.length; cidx++) {
-        var row = Game.Level1[cidx];
+      for(var cidx = 0; cidx < Game.Levels[this.level].length; cidx++) {
+        var row = Game.Levels[this.level][cidx];
         for(var idx = 0; idx < row.length; idx++){
           var item = row[idx];
           var xPos = Game.Base.width + ((cidx + 1) * Game.Resources.textures.enemy.width);
@@ -114,6 +134,9 @@
           this.lastEnemyPos = new PIXI.Point(xPos, yPos);
         }
       };
+      if (Game.Levels[this.level + 1]) {
+        this.level++;
+      }else { this.level = 1 }
     };
     this.renderEnemies = function(){
       for(var x = 0; x < this.enemies.length; x++){
