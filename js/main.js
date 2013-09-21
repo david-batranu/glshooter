@@ -44,7 +44,7 @@
   Game.Resources = {
     textures: {
       bullet: new PIXI.Texture.fromImage('img/beam.png'),
-      ship: new PIXI.Texture.fromImage('img/ship.png'),
+      ship: new PIXI.Texture.fromImage('img/hero.png'),
       enemy: new PIXI.Texture.fromImage('img/enemy.png'),
       square: new PIXI.Texture.fromImage('img/square.png'),
       spread: new PIXI.Texture.fromImage('img/spread.png'),
@@ -459,12 +459,12 @@
       var ship = Game.Base.scene.ship;
       if(Game.Logic.checkCollision(this, ship)){
         Game.Base.gameover = true;
-      }else if(this.position.x > -this.width){ // outside left screen edge when true
-        this.speed.x = ship.score / 500;
-        this.position.x -= this.speed.x + 1;
-      }else{
+      }else if(this.position.x < -this.width){ // outside left screen edge when true
         this.visible = false;
         Game.Base.gameover = true;
+      }else{
+        this.speed.x = ship.score / 500;
+        this.position.x -= this.speed.x + 1;
       }
     };
   };
