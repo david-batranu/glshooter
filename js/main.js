@@ -123,8 +123,8 @@
         var row = Game.Levels[this.level][cidx];
         for(var idx = 0; idx < row.length; idx++){
           var item = row[idx];
-          var xPos = Game.Base.width + ((cidx + 1) * Game.Resources.textures.enemy.width);
-          var yPos = ((idx + 1) * Game.Resources.textures.enemy.height);
+          var xPos = Game.Base.width + ((cidx + 1) * (Game.Resources.textures.enemy.width * Game.Base.scale));
+          var yPos = ((idx + 1) * (Game.Resources.textures.enemy.height * Game.Base.scale));
           if (item == 'E') {
             var newEnemy = new Game.Enemy(xPos, yPos);
 
